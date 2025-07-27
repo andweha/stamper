@@ -144,11 +144,11 @@ def create_media_db(
         trending INTEGER,
         genres TEXT,
         description TEXT,
-        coverImage TEXT,
+        cover_url TEXT,
         start_date TEXT
     )
     """)
-    anime_cols = ["anilist_id", "title_romaji", "title_english", "episodes", "duration", "averageScore", "trending", "genres", "description", "coverImage", "start_date"]
+    anime_cols = ["anilist_id", "title_romaji", "title_english", "episodes", "duration", "averageScore", "trending", "genres", "description", "cover_url", "start_date"]
     anime_rows = dicts_to_rows(anime_data, anime_cols)
     insert_many_rows(conn, "anime", anime_cols, anime_rows)
 
