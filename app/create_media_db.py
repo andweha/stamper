@@ -139,8 +139,7 @@ def create_media_db(
         title_romaji TEXT,
         title_english TEXT,
         episodes INTEGER,
-        duration INTEGER,
-        averageScore INTEGER,
+        average_score INTEGER,
         trending INTEGER,
         genres TEXT,
         description TEXT,
@@ -148,7 +147,7 @@ def create_media_db(
         start_date TEXT
     )
     """)
-    anime_cols = ["anilist_id", "title_romaji", "title_english", "episodes", "duration", "averageScore", "trending", "genres", "description", "cover_url", "start_date"]
+    anime_cols = ["anilist_id", "title_romaji", "title_english", "episodes", "average_score", "trending", "genres", "description", "cover_url", "start_date"]
     anime_rows = dicts_to_rows(anime_data, anime_cols)
     insert_many_rows(conn, "anime", anime_cols, anime_rows)
 
@@ -158,11 +157,11 @@ def create_media_db(
         episode_id INTEGER PRIMARY KEY,
         anilist_id INTEGER,
         episode_title TEXT,
-        air_date TEXT,
-        description TEXT
+        duration INTEGER,
+        thumbnail TEXT
     )
     """)
-    anime_ep_cols = ["episode_id", "anilist_id", "episode_title", "air_date", "description"]
+    anime_ep_cols = ["episode_id", "anilist_id", "episode_title", "duration", "thumbnail"]
     anime_ep_rows = dicts_to_rows(anime_eps_data, anime_ep_cols)
     insert_many_rows(conn, "anime_ep", anime_ep_cols, anime_ep_rows)
 
