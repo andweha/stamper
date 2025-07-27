@@ -282,6 +282,7 @@ def view_anime(anime_id):
         abort(404)
     anime = dict(zip([c[0] for c in cursor.description], anime_row))
 
+    episode_query = f"SELECT * FROM anime_ep WHERE anilist_id = {anime_id}"
     ep_cursor = conn.execute(episode_query)
     ep_columns = [col[0] for col in ep_cursor.description]
     episodes = [dict(zip(ep_columns, row)) for row in ep_cursor.fetchall()]
