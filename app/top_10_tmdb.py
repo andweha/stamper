@@ -7,7 +7,7 @@ load_dotenv()
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 BASE_URL = "https://api.themoviedb.org/3"
-IMG_BASE_URL = "https://image.tmdb.org/t/p/w500"
+IMG_BASE_URL = "https://image.tmdb.org/t/p/w780"
 
 def fetch_popular(media_type="movie", count=10):
     url = f"{BASE_URL}/{media_type}/popular"

@@ -1,5 +1,4 @@
 import requests
-import pandas as pd
 import time # rate limits
 import re
 import html
@@ -176,7 +175,7 @@ def parse_episodes(anilist_id, episodes_data):
     return parsed
 
 # Take episode data, store in csvs
-def generate_episode_csvs(anime_data):
+def generate_episodes(anime_data):
     all_episodes = []
     for anime in anime_data:
         try:
@@ -190,18 +189,13 @@ def generate_episode_csvs(anime_data):
         except Exception as e:
             print(f"failed to fetch episodes for {anime.get('title_english')}: {e}")
 
-    pd.DataFrame(all_episodes).to_csv("anime_episodes.csv", index=False)
-    print("Saved anime_episodes.csv with", len(all_episodes), "entries")
+    return all_episodes
 
 def main():
-    # Fetch trending anime and write to anime_catalog.csv
     anime_raw = fetch_anime(pages=1)
     anime_data = parse_anime(anime_raw)
-    pd.DataFrame(anime_data).to_csv("anime_catalog.csv", index=False)
-    print("Saved anime_catalog.csv with", len(anime_data), "entries")
-
-    # Generate episodes CSV
-    generate_episode_csvs(anime_data)
+    episodes_data = generate_episodes(anime_data)
+    return anime_data, episodes_data
 
 if __name__ == "__main__":
     main()

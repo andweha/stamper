@@ -3,7 +3,6 @@ import sqlite3
 import subprocess
 
 import git
-import pandas as pd
 import requests
 from dotenv import load_dotenv
 from flask import Flask, abort, flash, redirect, render_template, request, url_for, jsonify
@@ -55,22 +54,19 @@ TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 db.init_app(app)
 
-BASE_URL = "https://api.themoviedb.org/3"
-IMG_BASE_URL = "https://image.tmdb.org/t/p/w500"
-
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"  # redirects unathorized users
 login_manager.login_message_category = "info"
 
-
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
-
 with app.app_context():
     db.create_all()
+
+MEDIA_DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "media.db"))
 
 # Helper function to parse comment timestamp
 def parse_timestamp_string(ts_str):
@@ -88,18 +84,20 @@ def parse_timestamp_string(ts_str):
 # Update TMDB to show to catalogue page
 @app.route("/")
 def catalogue():
-    MEDIA_DB_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "media.db"
-    )
     conn = sqlite3.connect(MEDIA_DB_PATH)
 
-    movie_query = "SELECT * FROM media WHERE media_type = 'movie' ORDER BY vote_average DESC LIMIT 50"
-    tv_query = "SELECT * FROM media WHERE media_type = 'tv' ORDER BY vote_average DESC LIMIT 10"
+    movie_query = "SELECT * FROM featured_movies ORDER BY rank ASC LIMIT 50"
+    tv_query = "SELECT * FROM featured_tv ORDER BY rank ASC LIMIT 10"
     anime_query = "SELECT * FROM anime ORDER BY trending DESC LIMIT 10"
 
-    movies = pd.read_sql(movie_query, conn).to_dict(orient="records")
-    tv_shows = pd.read_sql(tv_query, conn).to_dict(orient="records")
-    anime = pd.read_sql(anime_query, conn).to_dict(orient="records")
+    def fetch_rows(conn, query):
+        cursor = conn.execute(query)
+        columns = [col[0] for col in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+    movies = fetch_rows(conn, movie_query)
+    tv_shows = fetch_rows(conn, tv_query)
+    anime = fetch_rows(conn, anime_query)
 
     conn.close()
 
@@ -112,64 +110,43 @@ def catalogue():
 
 @app.route("/media/<int:media_id>")
 def get_media(media_id):
-    MEDIA_DB_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "media.db"
-    )
     conn = sqlite3.connect(MEDIA_DB_PATH)
     
     # START OF SHOW LIVE QUERY
     # Check if media exists in our database
     media_query = f"SELECT * FROM media WHERE tmdb_id = {media_id}"
-    media_df = pd.read_sql(media_query, conn)
-    
-    # If media doesn't exist, fetch and cache it
-    if media_df.empty:
-        try:
-            fetch_and_cache_show(media_id, conn)
-        except Exception as e:
-            # If it fails as a TV show, it might be a movie that got here somehow
-            try:
-                fetch_and_cache_movie(media_id, conn)
-            except Exception as e2:
-                conn.close()
-                abort(404)
-        
-        media_df = pd.read_sql(media_query, conn)
-    
-    if media_df.empty:
-        conn.close()
-        abort(404)
-    
-    media = media_df.iloc[0].to_dict()    # gets seasons
 
-    MEDIA_DB_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "media.db"
-    )
-    conn = sqlite3.connect(MEDIA_DB_PATH)
-    media_query = f"SELECT * FROM media WHERE tmdb_id = {media_id}"
-    media = pd.read_sql(media_query, conn).iloc[0].to_dict()
+    cursor = conn.execute(media_query)
+    row = cursor.fetchone()
+    if not row:
+        fetch_and_cache_show(media_id, conn)
+        cursor = conn.execute(media_query)
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            abort(404)
+
+    media = dict(zip([c[0] for c in cursor.description], row))
 
     # gets seasons
     seasons = []
     if media["media_type"] == "tv":
-        MEDIA_DB_PATH = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "..", "media.db"
-        )
-        conn = sqlite3.connect(MEDIA_DB_PATH)
         season_query = (
             f"SELECT * FROM seasons WHERE tv_id = '{media_id}' ORDER BY season_number")
-        season_df = pd.read_sql(season_query, conn)
+        seasons = []
+        season_cursor = conn.execute(season_query)
+        season_columns = [col[0] for col in season_cursor.description]
 
-        for idx, row in season_df.iterrows():
-            season_dict = row.to_dict()
-            episode_query = (
-                f"SELECT * FROM episodes WHERE season_id = '{row['season_id']}' "
-                "ORDER BY episode_number"
-            )
-            episode_df = pd.read_sql(episode_query, conn)
-            season_dict["episodes"] = episode_df.to_dict(orient="records")
-
+        for row in season_cursor.fetchall():
+            season_dict = dict(zip(season_columns, row))
+            
+            episode_query = f"SELECT * FROM episodes WHERE season_id = '{row[0]}' ORDER BY episode_number"
+            ep_cursor = conn.execute(episode_query)
+            ep_columns = [col[0] for col in ep_cursor.description]
+            season_dict["episodes"] = [dict(zip(ep_columns, ep_row)) for ep_row in ep_cursor.fetchall()]
+            
             seasons.append(season_dict)
+
         conn.close()
     return render_template("season_page.html", item=media, seasons=seasons)
 
@@ -184,24 +161,18 @@ def view_movie(movie_id):
     conn = sqlite3.connect(MEDIA_DB_PATH)
 
     movie_query = f"SELECT * FROM media WHERE tmdb_id = {movie_id} AND media_type = 'movie'"
-    media_df = pd.read_sql(movie_query, conn)
-
-    #THIS IS WHERE THE NEW LIVE QUERY IS DONE
-    # Check if movie exists in DB, and fetch if not
-    if media_df.empty:
-        try:
-            fetch_and_cache_movie(movie_id, conn)
-        except Exception as e:
+    cursor = conn.execute(movie_query)
+    row = cursor.fetchone()
+    if not row:
+        fetch_and_cache_movie(movie_id, conn)
+        cursor = conn.execute(movie_query)
+        row = cursor.fetchone()
+        if not row:
             conn.close()
             abort(404)
 
-        media_df = pd.read_sql(movie_query, conn)
+    movie = dict(zip([c[0] for c in cursor.description], row))
 
-    if media_df.empty:
-        conn.close()
-        abort(404)
-
-    movie = media_df.iloc[0].to_dict()
     conn.close()
 
     # Allow commenting
@@ -248,13 +219,15 @@ def view_movie(movie_id):
 # for shows
 @app.route("/episode/<int:episode_id>", methods=["GET", "POST"])
 def view_episode(episode_id):
-    # get episode from sqlite
-    MEDIA_DB_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "media.db"
-    )
     conn = sqlite3.connect(MEDIA_DB_PATH)
     episode_query = f"SELECT * FROM episodes WHERE episode_id = {episode_id}"
-    episode = pd.read_sql(episode_query, conn).iloc[0].to_dict()
+    cursor = conn.execute(episode_query)
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        abort(404)
+    episode = dict(zip([c[0] for c in cursor.description], row))
+
     conn.close()
 
     # Allow commenting
@@ -300,17 +273,19 @@ def view_episode(episode_id):
 # anime
 @app.route("/anime/<int:anime_id>")
 def view_anime(anime_id):
-    MEDIA_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "media.db")
     conn = sqlite3.connect(MEDIA_DB_PATH)
 
     anime_query = f"SELECT * FROM anime WHERE anilist_id = {anime_id}"
-    anime_result = pd.read_sql(anime_query, conn).to_dict(orient="records")
-    if not anime_result:
+    cursor = conn.execute(anime_query)
+    anime_row = cursor.fetchone()
+    if not anime_row:
         abort(404)
-    anime = anime_result[0]
+    anime = dict(zip([c[0] for c in cursor.description], anime_row))
 
-    episode_query = f"SELECT * FROM anime_ep WHERE anilist_id = {anime_id}"
-    episodes = pd.read_sql(episode_query, conn).to_dict(orient="records")
+    ep_cursor = conn.execute(episode_query)
+    ep_columns = [col[0] for col in ep_cursor.description]
+    episodes = [dict(zip(ep_columns, row)) for row in ep_cursor.fetchall()]
+
     conn.close()
 
     # get episode nums
@@ -321,27 +296,24 @@ def view_anime(anime_id):
 # anime details
 @app.route("/aniepisode/<int:episode_id>", methods=["GET", "POST"])
 def view_anime_episode(episode_id):
-    MEDIA_DB_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "media.db"
-    )
     conn = sqlite3.connect(MEDIA_DB_PATH)
 
     episode_query = f"SELECT * FROM anime_ep WHERE episode_id = {episode_id}"
-    episode_df = pd.read_sql(episode_query, conn)
-    
 
-    if episode_df.empty:
+    cursor = conn.execute(episode_query)
+    row = cursor.fetchone()
+    if not row:
         abort(404)
-
-    episode = episode_df.iloc[0].to_dict()
+    episode = dict(zip([c[0] for c in cursor.description], row))
 
     anilist_id = episode.get("anilist_id") # Get the anilist_id from the episode data
     anime_details = None
     if anilist_id:
         anime_query = f"SELECT * FROM anime WHERE anilist_id = {anilist_id}"
-        anime_df = pd.read_sql(anime_query, conn)
-        if not anime_df.empty:
-            anime_details = anime_df.iloc[0].to_dict()
+        anime_cursor = conn.execute(anime_query)
+        row = anime_cursor.fetchone()
+        if row:
+            anime_details = dict(zip([c[0] for c in anime_cursor.description], row))
     conn.close()
 
     # Allow commenting
@@ -418,10 +390,6 @@ def api_search():
     if not q:
         return jsonify([])
 
-    # Step 1: Check local SQLite DB
-    MEDIA_DB_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "media.db"
-    )
     conn = sqlite3.connect(MEDIA_DB_PATH)
     cursor = conn.execute(
         """
@@ -536,13 +504,3 @@ def webhook():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
-
-# @app.route("/update_server", methods=['POST'])
-# # def webhook():
-# #     if request.method == 'POST':
-# #         repo = git.Repo('/home/thealienseb/SEO_Flask_practice')
-# #         origin = repo.remotes.origin
-# #         origin.pull()
-# #         return 'Updated PythonAnywhere successfully', 200
-# #     else:
-# #         return 'Wrong event type', 400
