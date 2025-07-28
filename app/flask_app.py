@@ -37,7 +37,8 @@ from app.anilist import (
 from app.forms import RegistrationForm, LoginForm, commentForm
 from app.google_ai import get_comments, summarize_comments
 
-from app.models import Comment, User, db, History
+from app.models import Comment, User, db, History, Favorite
+
 from app.tenor import search_gif, featured_gifs
 from app.cache_tmdb import fetch_and_cache_movie, fetch_and_cache_show
 from app.history import add_to_history
@@ -227,7 +228,8 @@ def view_movie(movie_id):
 
     comment_block = get_comments(movie_id)
     emoji_summary = summarize_comments(comment_block) if comment_block else ""
-
+    user_favorites = get_user_favorites()
+    
     return render_template(
         "media_page.html",
         media=movie,
@@ -235,6 +237,7 @@ def view_movie(movie_id):
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
+        user_favorites=user_favorites,
     )
 
 
@@ -387,6 +390,57 @@ def view_anime_episode(episode_id):
         comments=comments,
         emoji_summary=emoji_summary,
     )
+def get_user_favorites():
+    if current_user.is_authenticated:
+        favorites = db.session.query(Favorite.media_id).filter(Favorite.user_id == current_user.id).all()
+        return [fav[0] for fav in favorites]
+    return []
+
+@app.route("/toggle_favorite/<int:media_id>", methods=["POST"])
+@login_required
+def toggle_favorite(media_id):
+    favorite = Favorite.query.filter_by(user_id=current_user.id, media_id=media_id).first()
+    if favorite:
+        db.session.delete(favorite)
+    else:
+        db.session.add(Favorite(user_id=current_user.id, media_id=media_id))
+    db.session.commit()
+    return '', 204
+
+
+@app.route("/favorites")
+@login_required
+def favorites():
+
+    # Step 1: Get the user's favorited show_ids from SQLAlchemy
+    favorite_ids = (
+        db.session.query(Favorite.media_id)
+        .filter(Favorite.user_id == current_user.id)
+        .all()
+    )
+    # favorite_ids is a list of tuples like [(1,), (2,), (5,)] — we need a flat list
+    media_ids = [id for (id,) in favorite_ids]
+
+    if not media_ids:
+        return render_template("Favorited.html", shows=[])
+
+    # Step 2: Open a raw SQLite connection to media.db
+    MEDIA_DB_PATH = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "media.db"
+    )
+    conn = sqlite3.connect(MEDIA_DB_PATH)
+    conn.row_factory = sqlite3.Row  # enables dict-like row access
+    cursor = conn.cursor()
+
+    # Step 3: Query for shows that match the IDs
+    placeholders = ",".join(["?"] * len(media_ids))  # e.g., "?, ?, ?"
+    query = f"SELECT * FROM media WHERE tmdb_id IN ({placeholders})"
+    cursor.execute(query, media_ids)
+    shows = cursor.fetchall()
+
+    conn.close()
+    return render_template("Favorited.html", shows=shows)
+
 
 
 @app.route("/comment/<int:comment_id>/delete", methods=["POST"])
