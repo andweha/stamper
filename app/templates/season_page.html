@@ -7,16 +7,16 @@
   <div class="Details">
 
     <div class="title-poster">
-      <h1>{{ item.title }}</h1>
+      <h1 class="movie-title">{{ item.title }}</h1>
         {% if item.poster_url %}
-        <img src="{{ item.poster_url }}" alt="{{ item.title }}" width="300">
+        <img class="movie-poster" src="{{ item.poster_url }}" alt="{{ item.title }}" width="300">
         {% endif %}
     </div> <!-- Title poster ends here-->
     <div class="Overview">
-      <p>{{ item.overview }}</p>
-      <p><strong>Type:</strong> {{ item.media_type|upper }}</p>
-      <p><strong>Release Date:</strong> {{ item.release_date }}</p>
-      <p><strong>Rating:</strong> {{ item.vote_average }}</p>
+      <p class="item-overview">{{ item.overview }}</p>
+      <p><strong >📺 Type:</strong> {{ item.media_type|upper }}</p>
+      <p><strong >📅 Release Date:</strong> {{ item.release_date }}</p>
+      <p><strong>⭐ Rating:</strong> {{ item.vote_average }}</p>
     </div> <!-- Overview ends here-->
 
 
@@ -48,4 +48,43 @@
   {% endif %}
 </div>
 </main>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const seasonBlocks = document.querySelectorAll('.season-block');
+    let currentOpenDropdown = null;
+    
+    seasonBlocks.forEach(block => {
+        const dropdown = block.querySelector('.dropdown-eps');
+        
+        block.addEventListener('mouseenter', function() {
+            // Close any previously open dropdown
+            if (currentOpenDropdown && currentOpenDropdown !== dropdown) {
+                currentOpenDropdown.style.display = 'none';
+                currentOpenDropdown.style.position = 'fixed'; // Reset to fixed
+            }
+            
+            // Show current dropdown
+            dropdown.style.display = 'block';
+            dropdown.style.position = 'relative'; // Change to relative
+            dropdown.style.left = 'auto';
+            dropdown.style.top = 'auto';
+            dropdown.style.width = '100%';
+            
+            currentOpenDropdown = dropdown;
+        });
+    });
+    
+    // Close dropdown when leaving the entire seasons grid
+    const seasonsGrid = document.querySelector('.seasons-button-grid');
+    if (seasonsGrid) {
+        seasonsGrid.addEventListener('mouseleave', function() {
+            if (currentOpenDropdown) {
+                currentOpenDropdown.style.display = 'none';
+                currentOpenDropdown.style.position = 'fixed'; // Reset to fixed
+                currentOpenDropdown = null;
+            }
+        });
+    }
+});
+</script>
 {% endblock content %}
