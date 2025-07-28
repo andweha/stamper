@@ -537,6 +537,48 @@ def api_search():
 
     return jsonify(formatted)
 
+# profile of user
+@app.route("/profile")
+@login_required
+def profile():
+    # get watch counts
+    movies_watched_count = db.session.query(History.media_id).filter(
+        History.user_id == current_user.id,
+        History.media_type == 'movie'
+    ).distinct().count()
+
+    shows_watched_count = db.session.query(History.media_id).filter(
+        History.user_id == current_user.id,
+        History.media_type == 'tv'
+    ).distinct().count()
+
+    anime_watched_count = db.session.query(History.media_id).filter(
+        History.user_id == current_user.id,
+        History.media_type == 'anime'
+    ).distinct().count()
+
+    # profile picture
+    default_profile_pic_url = url_for('static', filename='images/default_profile.jpg')
+
+    user_profile_pic_url = getattr(current_user, 'profile_pic_url', None)
+    if user_profile_pic_url:
+        profile_pic_to_display = user_profile_pic_url
+    else:
+        profile_pic_to_display = default_profile_pic_url
+
+    # Pass data to the template
+    return render_template(
+        'profile.html',
+        user=current_user,
+        profile_pic_url=profile_pic_to_display,
+        stats={
+            'movies_watched': movies_watched_count,
+            'shows_watched': shows_watched_count,
+            'anime_watched': anime_watched_count,
+        }
+    )
+    
+
 # history for current user, order by recently watched
 @app.route("/history")
 @login_required

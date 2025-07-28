@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block title %}Profile Page{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <div class="catalogue-wrapper">
+        <div class="profile-page-container">
+            <section class="profile-header-section">
+                <div class="profile-picture-wrapper">
+                    <img src="{{ profile_pic_url }}" alt="{{ user.username }}'s Profile Picture" class="profile-avatar">
+                </div>
+                <div class="profile-info-text">
+                    <h2 class="user-name">{{ user.username }}</h2>
+                </div>
+            </section>
+
+            <section class="watched-categories-section">
+                <div class="categories-grid">
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-film"></i> </div>
+                        <p class="category-count">{{ stats.movies_watched }}</p>
+                        <h3 class="category-label">Movies Watched</h3>
+                    </div>
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-tv"></i> </div>
+                        <p class="category-count">{{ stats.shows_watched }}</p>
+                        <h3 class="category-label">TV Shows</h3>
+                    </div>
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-bolt"></i> </div>
+                        <p class="category-count">{{ stats.anime_watched }}</p>
+                        <h3 class="category-label">Anime Series</h3>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+{% endblock %}
