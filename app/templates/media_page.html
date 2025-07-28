@@ -4,13 +4,16 @@
 <div class="Container">
   <div class="main-content-wrapper">
     <div class="movie-main">
-      <button class="star-button" data-show-id="{{ media.tmdb_id }}">
+      {% if media_type == 'movie' %}
+      <button class="star-button" data-show-id="{% if media_type == 'movie' %}{{ media.tmdb_id }}{% elif media_type == 'episode' %}{{ media.tv_id }}{% elif media_type == 'anime_episode' %}{{ anime.anilist_id }}{% else %}{{ media.tmdb_id }}{% endif %}">
         {% if media.tmdb_id in user_favorites %}
           ⭐
         {% else %}
           ☆
         {% endif %}
       </button>
+      {% endif %}
+
       <!-- This is the overview part of the media (Desc, Title, Poster) -->
       <div class="Details">
         <div class="title-poster">

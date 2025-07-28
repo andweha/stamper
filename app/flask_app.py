@@ -37,9 +37,12 @@ from app.anilist import (
 from app.forms import RegistrationForm, LoginForm, commentForm
 from app.google_ai import get_comments, summarize_comments
 
-from app.models import Comment, User, db, Favorite
+from app.models import Comment, User, db, History, Favorite
+
 from app.tenor import search_gif, featured_gifs
 from app.cache_tmdb import fetch_and_cache_movie, fetch_and_cache_show
+from app.history import add_to_history
+
 
 app = Flask(__name__)
 proxied = FlaskBehindProxy(app)
@@ -128,6 +131,16 @@ def get_media(media_id):
 
     media = dict(zip([c[0] for c in cursor.description], row))
 
+    # history
+    if current_user.is_authenticated and media["media_type"] == "tv":
+        add_to_history(
+            user_id=current_user.id,
+            media_type="tv",
+            media_id=media["tmdb_id"],
+            title=media["title"],
+            poster_url=media.get("poster_url")
+        )
+
     # gets seasons
     seasons = []
     if media["media_type"] == "tv":
@@ -148,7 +161,7 @@ def get_media(media_id):
             seasons.append(season_dict)
 
         conn.close()
-    return render_template("season_page.html", item=media, seasons=seasons)
+    return render_template("season_page.html", item=media, seasons=seasons,media_type="tv",media_id=media["tmdb_id"])
 
 
 # for movies
@@ -174,6 +187,16 @@ def view_movie(movie_id):
     movie = dict(zip([c[0] for c in cursor.description], row))
 
     conn.close()
+
+    # add to history
+    if current_user.is_authenticated:
+        add_to_history(
+            user_id=current_user.id,
+            media_type="movie",
+            media_id=movie["tmdb_id"],
+            title=movie["title"],
+            poster_url=movie.get("poster_url")
+        )
 
     # Allow commenting
     form = commentForm()
@@ -259,7 +282,7 @@ def view_episode(episode_id):
         .order_by(Comment.timestamp)
         .all()
     )
-    user_favorites = get_user_favorites()  # Add this line
+
     comment_block = get_comments(episode_id)
     emoji_summary = summarize_comments(comment_block) if comment_block else ""
 
@@ -270,7 +293,6 @@ def view_episode(episode_id):
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
-        user_favorites=user_favorites
     )
 
 # anime
@@ -285,17 +307,26 @@ def view_anime(anime_id):
         abort(404)
     anime = dict(zip([c[0] for c in cursor.description], anime_row))
 
+    if current_user.is_authenticated:
+        add_to_history(
+            user_id=current_user.id,
+            media_type="anime",
+            media_id=anime["anilist_id"],
+            title=anime["title_english"],
+            poster_url=anime.get("cover_url")
+        )
+    
     episode_query = f"SELECT * FROM anime_ep WHERE anilist_id = {anime_id}"
     ep_cursor = conn.execute(episode_query)
     ep_columns = [col[0] for col in ep_cursor.description]
     episodes = [dict(zip(ep_columns, row)) for row in ep_cursor.fetchall()]
 
     conn.close()
-
+    user_favorites = get_user_favorites()  # Add this line
     # get episode nums
     episodes.sort(key=lambda x: extract_ep_num(x.get('episode_title')), reverse=False)
 
-    return render_template("anime_page.html", anime=anime, episodes=episodes)
+    return render_template("anime_page.html", anime=anime, episodes=episodes,user_favorites=user_favorites,media_type="anime",media_id=anime["anilist_id"],)
 
 # anime details
 @app.route("/aniepisode/<int:episode_id>", methods=["GET", "POST"])
@@ -346,10 +377,10 @@ def view_anime_episode(episode_id):
         .order_by(Comment.timestamp)
         .all()
     )
-    user_favorites = get_user_favorites()  # Add this line
+
     comment_block = get_comments(episode_id)
     emoji_summary = summarize_comments(comment_block) if comment_block else ""
-
+    user_favorites = get_user_favorites()  # Add this line
     return render_template(
         "media_page.html",
         media=episode,
@@ -408,8 +439,18 @@ def favorites():
     cursor.execute(query, media_ids)
     shows = cursor.fetchall()
 
+    placeholders = ",".join(["?"] * len(media_ids))  # e.g., "?, ?, ?"
+    query = f"SELECT *, 'anime' as media_type FROM anime WHERE anilist_id IN ({placeholders})"
+    cursor.execute(query, media_ids)
+    anime = cursor.fetchall()
+    
+
+    user_favorites = get_user_favorites()  # Add this line
+    user_favorites=user_favorites
+    
+    shows.extend(anime)
     conn.close()
-    return render_template("Favorited.html", shows=shows)
+    return render_template("Favorited.html", shows=shows,user_favorites=user_favorites)
 
 
 
@@ -441,37 +482,37 @@ def search_gifs():
 @app.route("/api/search")
 def api_search():
     q = request.args.get("q", "").strip()
-    limit = min(int(request.args.get("limit", 10)), 50)
+    limit = min(int(request.args.get("limit", 5)), 50)
 
     if not q:
         return jsonify([])
 
-    conn = sqlite3.connect(MEDIA_DB_PATH)
-    cursor = conn.execute(
-        """
-        SELECT tmdb_id, title, overview, media_type, poster_url
-        FROM media 
-        WHERE title LIKE ? 
-        ORDER BY title ASC 
-        LIMIT ?
-        """,
-        (f"%{q}%", limit)
-    )
-    results = cursor.fetchall()
-    conn.close()
+    # conn = sqlite3.connect(MEDIA_DB_PATH)
+    # cursor = conn.execute(
+    #     """
+    #     SELECT tmdb_id, title, overview, media_type, poster_url
+    #     FROM media 
+    #     WHERE title LIKE ? 
+    #     ORDER BY title ASC 
+    #     LIMIT ?
+    #     """,
+    #     (f"%{q}%", limit)
+    # )
+    # results = cursor.fetchall()
+    # conn.close()
 
-    if results:
-        # Format DB results
-        return jsonify([
-            {
-                "id": row[0],
-                "title": row[1],
-                "description": row[2] or "",
-                "media_type": row[3],
-                "poster_url": row[4] or ""
-            }
-            for row in results
-        ])
+    # if results:
+    #     # Format DB results
+    #     return jsonify([
+    #         {
+    #             "id": row[0],
+    #             "title": row[1],
+    #             "description": row[2] or "",
+    #             "media_type": row[3],
+    #             "poster_url": row[4] or ""
+    #         }
+    #         for row in results
+    #     ])
 
     # Step 2: Fallback to TMDB if no local matches
     TMDB_API_KEY = os.getenv("TMDB_API_KEY")
@@ -506,6 +547,13 @@ def api_search():
         })
 
     return jsonify(formatted)
+
+# history for current user, order by recently watched
+@app.route("/history")
+@login_required
+def history():
+    user_history = History.query.filter_by(user_id=current_user.id).order_by(History.watched_at.desc()).all()
+    return render_template("history.html", user_history=user_history)
 
 
 @app.route("/register", methods=["GET", "POST"])

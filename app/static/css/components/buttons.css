@@ -72,3 +72,57 @@
   background-color: rgb(247, 90, 90) !important;
   color: white !important;
 }
+
+.star-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+  outline: none;
+  color: #ffd700; /* Gold color for stars */
+}
+
+.star-button:hover {
+  background-color: rgba(255, 215, 0, 0.1);
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
+}
+
+.star-button:active {
+  transform: scale(0.95);
+}
+
+.star-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Add a subtle glow effect */
+.star-button:focus {
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.4);
+}
+
+/* Animation for when star changes */
+.star-button.favorited {
+  animation: starPulse 0.3s ease-in-out;
+}
+
+@keyframes starPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Responsive sizing */
+@media (max-width: 768px) {
+  .star-button {
+    font-size: 1.3rem;
+    padding: 6px 10px;
+  }
+}
+
