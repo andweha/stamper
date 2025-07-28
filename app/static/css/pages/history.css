@@ -116,3 +116,10 @@
   width: 100%;
   box-sizing: border-box;
 }
+
+/* could improve styling here */
+.no-history-message {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+}
