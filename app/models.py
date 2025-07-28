@@ -37,3 +37,17 @@ class Favorite(db.Model):
 
 
 
+class History(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    media_type = db.Column(db.String(50), nullable=False) # movie,tv,or anime
+    media_id = db.Column(db.Integer, nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    poster_url = db.Column(db.String(255))
+    watched_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship("User", backref="history_entries")
+
+    def __repr__(self):
+        return f"History(User: {self.user_id}, Media: {self.title}, Type: {self.media_type}, Watched: {self.watched_at})"

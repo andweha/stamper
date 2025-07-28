@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+{% block title %}History{% endblock %}
+
+{% block content %}
+<main class="main-content">
+  <div class="catalogue-wrapper">
+    <h1 class="page-title">Recently Watched</h1>
+
+    <div class="featured-grid">
+      {% for item in user_history %}
+        {% if item.media_type == 'movie' %}
+          <a href="{{ url_for('view_movie', movie_id=item.media_id) }}" class="history-item-card">
+        {% elif item.media_type == 'tv' %}
+          <a href="{{ url_for('get_media', media_id=item.media_id) }}" class="history-item-card">
+        {% elif item.media_type == 'anime' %}
+          <a href="{{ url_for('view_anime', anime_id=item.media_id) }}" class="history-item-card">
+        {% endif %}
+
+            <div class="history-card-inner">
+              <img src="{{ item.poster_url }}" alt="{{ item.title }}">
+              <div class="history-card-info-bar">
+                <p class="media-title">{{ item.title }}</p>
+                <div class="history-card-meta">
+                  <span class="media-type-badge">{{ item.media_type.replace('_', ' ').title() }}</span>
+                </div>
+              </div>
+              <p class="watched-date-line" data-watched-at="{{ item.watched_at.isoformat() }}Z">
+                Watched <span class="local-time">Loading...</span>
+              </p>
+            </div>
+
+          </a>
+      {% endfor %}
+
+      {% if user_history|length == 0 %}
+        <p class="no-history-message">No recently watched items.</p>
+      {% endif %}
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='scripts/time.js') }}"></script>
+{% endblock %}
