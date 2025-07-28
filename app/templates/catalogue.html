@@ -19,7 +19,6 @@
                 <a href="{{ url_for('view_movie', movie_id=movie.tmdb_id)}}">
                     <img src="{{ movie.poster_url }}" alt="{{ movie.title }}">
                 </a>
-                <p class="media-title">{{ movie.title }}</p>
             </div>
             {% endfor %}
         </div>
@@ -31,9 +30,21 @@
         <div class="featured-grid">
             {% for show in tv_shows %}
             <a href="{{ url_for('get_media', media_id=show.tmdb_id)}}" class="media-link">
+                <img src="{{ show.poster_url }}" alt="{{ show.title }}">
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Top Anime section -->
+    <section class="media-section">
+        <h1 class="section-header">🌸 Featured Anime</h1>
+        <div class="featured-grid">
+            {% for anime_show in anime %}
+            <a href="{{ url_for('view_anime', anime_id=anime_show.anilist_id) }}" class="media-link">
                 <div>
-                    <img src="{{ show.poster_url }}" alt="{{ show.title }}">
-                    <p class="media-title">{{ show.title }}</p>
+                    <img src="{{ anime_show.cover_url }}" alt="{{ anime_show.title_romaji }}">
+                    <p class="media-title">{{ anime_show.title_english or anime_show.title_romaji }}</p>
                 </div>
             </a>
             {% endfor %}
