@@ -61,7 +61,7 @@
   flex-direction: column;
   justify-content: center;
   background-color: #121212;
-  padding: 10px;
+  padding: 5px;
   border-top: 1px solid #222;
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
@@ -74,7 +74,7 @@
 .history-card-info-bar .media-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #f5f5f7;
+  color: #ffffff;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -89,13 +89,14 @@
   align-items: center;
   gap: 10px;
   font-size: 0.85rem;
-  color: #ccc;
-  margin-top: 5px;
+  color: #ffffff;
+  padding-left: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 .media-type-badge {
-  background-color: #7c3aed;
-  color: #fff;
+  background-color: #6366f1;
+  color: #ffffff;
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 0.7em;
