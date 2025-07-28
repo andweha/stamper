@@ -25,10 +25,6 @@
   margin-left: 1rem;
 }
 
-/* ===========================
-   Media Content Display
-   =========================== */
-
 .Details {
   display: flex;
 }
@@ -48,17 +44,6 @@
   width: fit-content;
 }
 
-/* ===========================
-   Typography & Headers
-   =========================== */
-
-h2, h3 {
-  margin: 1.5rem 0 1rem;
-  font-size: 1.4rem;
-  border-bottom: 2px solid #e5e5e5;
-  padding-bottom: 0.25rem;
-}
-
 .comments-header h3 {
   margin: 0;
   color: #333;
@@ -69,10 +54,6 @@ h2, h3 {
   color: red;
   font-size: 0.8rem;
 }
-
-/* ===========================
-   Comment Section
-   =========================== */
 
 .comment-container {
   width: 100%;
@@ -155,18 +136,9 @@ h2, h3 {
   background-color: transparent;
 }
 
-
-/* ===========================
-   Container Distinction
-   =========================== */
-
 .media-container {
   margin-bottom: 3rem;
 }
-
-/* ===========================
-   Responsive Design
-   =========================== */
 
 @media (max-width: 768px) {
   .main-content-wrapper {
@@ -174,15 +146,11 @@ h2, h3 {
   }
 }
 
-/* ===========================
-   Centered Two-Column Layout
-   =========================== */
-
 .content-layout {
   display: flex;
   justify-content: center;
   align-items: stretch;
-  gap: 2rem;
+  gap: 1rem;
   max-width: 1600px;
   margin: 0 auto;
   padding: 2rem 1rem;

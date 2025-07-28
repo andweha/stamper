@@ -1,7 +1,3 @@
-/* ===========================
-   Comments Section Styles
-   =========================== */
-
 .comments-container {
   display: flex;
   flex-direction: column;
@@ -13,6 +9,7 @@
   border-radius: 6px;
   border: 1px solid #e1e1e1;
   scroll-behavior: smooth;
+  overflow: visible;
 }
 
 .comment {
@@ -26,6 +23,7 @@
   font-size: 0.9rem;
   max-width: 100%;
   word-wrap: break-word;
+  overflow: visible;
 }
 
 .comment[data-hidden="true"] {
@@ -48,10 +46,6 @@
 .comment-body {
   line-height: 1.45;
 }
-
-/* ===========================
-   Comment Input with GIF Styles
-   =========================== */
 
 .comment-with-gif {
   position: relative;
@@ -81,12 +75,9 @@
   opacity: 1;
 }
 
-/* ===========================
-   GIF Popup Search Styles
-   =========================== */
-
 .gif-popup-wrapper {
   position: relative;
+  overflow: visible;
 }
 
 .gif-popup {
@@ -158,10 +149,6 @@
   border-radius: 6px;
   cursor: pointer;
 }
-
-/* ===========================
-   Utility Classes
-   =========================== */
 
 .hidden {
   display: none;
