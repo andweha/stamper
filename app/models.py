@@ -27,4 +27,12 @@ class Comment(db.Model):
 
     user = db.relationship("User", backref="comments")
 
+class Favorite(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    media_id = db.Column(db.Integer, nullable=False)
+    __table_args__ = (db.UniqueConstraint('user_id', 'media_id'),)
+
+
+
 

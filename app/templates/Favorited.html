@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="main-container">
+<h2>My Favorite Shows</h2>
+<div class="favorites-grid">
+    {% for show in shows %}
+    <div class="show-card">
+      <h3>{{ show["title"] }}</h3>
+      <p>{{ show["description"] }}</p>
+    </div>
+  {% endfor %}
+</div>
+</div>
+
+
+{% endblock content %}

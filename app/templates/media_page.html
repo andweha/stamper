@@ -4,6 +4,13 @@
 <div class="Container">
   <div class="main-content-wrapper">
     <div class="movie-main">
+      <button class="star-button" data-show-id="{{ media.tmdb_id }}">
+        {% if media.tmdb_id in user_favorites %}
+          ⭐
+        {% else %}
+          ☆
+        {% endif %}
+      </button>
       <!-- This is the overview part of the media (Desc, Title, Poster) -->
       <div class="Details">
         <div class="title-poster">
@@ -132,4 +139,5 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='scripts/progress_bar.js') }}"></script>
+<script src="{{ url_for('static', filename='scripts/favorites.js') }}"></script>
 {% endblock scripts %}

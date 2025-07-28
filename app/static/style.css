@@ -948,3 +948,18 @@ p[style*="color: red;"] {
     max-height: none;
   }
 }
+
+
+
+/* Favorties Page styling */
+
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.show-card {
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+}
