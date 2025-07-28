@@ -1,17 +1,13 @@
 import requests
-import pandas as pd
-from flask import Flask, render_template
 import os
 from dotenv import load_dotenv
 
 # Load environmental variables from .env file
 load_dotenv()
-TMDB_API_KEY = "4abd18d55b49ea191290f8344285d116"
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 BASE_URL = "https://api.themoviedb.org/3"
-IMG_BASE_URL = "https://image.tmdb.org/t/p/w500"
-
-app = Flask(__name__)
+IMG_BASE_URL = "https://image.tmdb.org/t/p/w780"
 
 # Fetch multiple pages of popular movies or TV shows
 def fetch_popular(media_type="movie", pages=1):
@@ -22,14 +18,26 @@ def fetch_popular(media_type="movie", pages=1):
             url, params={"api_key": TMDB_API_KEY, "page": page})
         response.raise_for_status()
         results.extend(response.json()["results"])
+        
+    return results
+
+def fetch_featured(media_type="movie", pages=2, count=100):
+    results = []
+    for page in range(1, pages + 1):
+        url = f"{BASE_URL}/trending/{media_type}/day"
+        response = requests.get(
+            url, params={"api_key": TMDB_API_KEY, "page": page})
+        response.raise_for_status()
+        results.extend(response.json()["results"][:count])
+
     return results
 
 # Extract necessary fields from TMDb movie/TV show data
-def parse_tmdb_items(items, media_type):
+def parse_tmdb_items(items, media_type, include_rank=False):
     parsed = []
 
     # For movies, get the runtime
-    for item in items:
+    for i, item in enumerate(items):
         runtime = None
         if media_type == "movie":
             movie_url = f"{BASE_URL}/movie/{item['id']}"
@@ -39,8 +47,7 @@ def parse_tmdb_items(items, media_type):
                 details = response.json()
                 runtime = details.get("runtime")
 
-        parsed.append(
-            {
+        entry = {
                 "tmdb_id": item["id"],
                 "title": item.get("title") or item.get("name"),
                 "media_type": media_type,
@@ -53,20 +60,13 @@ def parse_tmdb_items(items, media_type):
                 "release_date": item.get("release_date") or item.get("first_air_date"),
                 "runtime": runtime,
                 "vote_average": item.get("vote_average"),
-            })
+            }
+        
+        if include_rank:
+            entry["rank"] = i+1  # Rank starts from 1
+
+        parsed.append(entry)
     return parsed
-
-# Fetch and parse both movies and TV shows
-movies_raw = fetch_popular("movie", pages=2)
-tv_raw = fetch_popular("tv", pages=2)
-
-movies = parse_tmdb_items(movies_raw, "movie")
-tv = parse_tmdb_items(tv_raw, "tv")
-
-# Combine movie and TV data and store into single CSV file
-df = pd.DataFrame(movies + tv)
-df.to_csv("media_catalog.csv", index=False)
-print("Saved media_catalog.csv with", len(df), "entries")
 
 # Fetch all seasons of a particular TV show
 def fetch_tv_seasons(tv_id):
@@ -131,8 +131,8 @@ def parse_episodes(tv_id, season_num, season_id, episodes_raw):
         )
     return episodes
 
-# Take all the episode data and store them in csvs
-def generate_episode_csvs():
+# Take all the episode data and store them in db
+def generate_episode_entries(tv):
     season_data = []
     episode_data = []
     for show in tv:
@@ -150,16 +150,19 @@ def generate_episode_csvs():
             episodes_raw = fetch_season_episodes(tv_id, season_num)
             episodes = parse_episodes(tv_id, season_num, season_id, episodes_raw)
             episode_data.extend(episodes)
-    
-    # Save season data to CSV
-    season_df = pd.DataFrame(season_data)
-    season_df.to_csv("tv_seasons.csv", index=False)
-    print("Saved tv_seasons.csv with", len(season_df), "entries")
+            
+    return season_data, episode_data
 
-    # Save episode data to CSV
-    episode_df = pd.DataFrame(episode_data)
-    episode_df.to_csv("tv_episodes.csv", index=False)
-    print("Saved tv_episodes.csv with", len(episode_df), "entries")
+def main():
+    featured_movies = parse_tmdb_items(fetch_featured("movie", 3), "movie", include_rank=True)
+    featured_tv = parse_tmdb_items(fetch_featured("tv", 3), "tv", include_rank=True)
+
+    popular_movies = parse_tmdb_items(fetch_popular("movie", 1), "movie")
+    popular_tv_shows = parse_tmdb_items(fetch_popular("tv", 1), "tv")
+
+    seasons_data, episodes_data = generate_episode_entries(popular_tv_shows)
+
+    return featured_movies, featured_tv, popular_movies, popular_tv_shows, seasons_data, episodes_data
 
 if __name__ == "__main__":
-    generate_episode_csvs()
+    main()
