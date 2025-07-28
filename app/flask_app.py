@@ -37,9 +37,11 @@ from app.anilist import (
 from app.forms import RegistrationForm, LoginForm, commentForm
 from app.google_ai import get_comments, summarize_comments
 
-from app.models import Comment, User, db
+from app.models import Comment, User, db, History
 from app.tenor import search_gif, featured_gifs
 from app.cache_tmdb import fetch_and_cache_movie, fetch_and_cache_show
+from app.history import add_to_history
+
 
 app = Flask(__name__)
 proxied = FlaskBehindProxy(app)
@@ -128,6 +130,16 @@ def get_media(media_id):
 
     media = dict(zip([c[0] for c in cursor.description], row))
 
+    # history
+    if current_user.is_authenticated and media["media_type"] == "tv":
+        add_to_history(
+            user_id=current_user.id,
+            media_type="tv",
+            media_id=media["tmdb_id"],
+            title=media["title"],
+            poster_url=media.get("poster_url")
+        )
+
     # gets seasons
     seasons = []
     if media["media_type"] == "tv":
@@ -174,6 +186,16 @@ def view_movie(movie_id):
     movie = dict(zip([c[0] for c in cursor.description], row))
 
     conn.close()
+
+    # add to history
+    if current_user.is_authenticated:
+        add_to_history(
+            user_id=current_user.id,
+            media_type="movie",
+            media_id=movie["tmdb_id"],
+            title=movie["title"],
+            poster_url=movie.get("poster_url")
+        )
 
     # Allow commenting
     form = commentForm()
@@ -282,6 +304,15 @@ def view_anime(anime_id):
         abort(404)
     anime = dict(zip([c[0] for c in cursor.description], anime_row))
 
+    if current_user.is_authenticated:
+        add_to_history(
+            user_id=current_user.id,
+            media_type="anime",
+            media_id=anime["anilist_id"],
+            title=anime["title_english"],
+            poster_url=anime.get("cover_url")
+        )
+    
     episode_query = f"SELECT * FROM anime_ep WHERE anilist_id = {anime_id}"
     ep_cursor = conn.execute(episode_query)
     ep_columns = [col[0] for col in ep_cursor.description]
@@ -451,6 +482,13 @@ def api_search():
         })
 
     return jsonify(formatted)
+
+# history for current user, order by recently watched
+@app.route("/history")
+@login_required
+def history():
+    user_history = History.query.filter_by(user_id=current_user.id).order_by(History.watched_at.desc()).all()
+    return render_template("history.html", user_history=user_history)
 
 
 @app.route("/register", methods=["GET", "POST"])
