@@ -110,10 +110,8 @@ def catalogue():
         ORDER BY ftv.rank ASC 
         LIMIT 10
     """
-    
     # Anime query remains the same since it already has description
     anime_query = "SELECT * FROM anime ORDER BY trending DESC LIMIT 10"
-
 
     def fetch_rows(conn, query):
         cursor = conn.execute(query)
@@ -123,15 +121,13 @@ def catalogue():
     movies = fetch_rows(conn, movie_query)
     tv_shows = fetch_rows(conn, tv_query)
     anime = fetch_rows(conn, anime_query)
-    user_favorites = get_user_favorites()  # Add this line
+
     conn.close()
 
     users = User.query.all()
     return render_template(
-        "catalogue.html", movies=movies, tv_shows=tv_shows, anime=anime, users=users, user_favorites=user_favorites
+        "catalogue.html", movies=movies, tv_shows=tv_shows, anime=anime, users=users
     )
-
-
 
 @app.route("/media/<int:media_id>")
 def get_media(media_id):
@@ -235,11 +231,12 @@ def view_movie(movie_id):
             timestamp=timestamp_seconds,
             user_id=current_user.id,
             episode_id=int(movie_id),
-            gif_url=form.gif_url.data
+            gif_url=form.gif_url.data,
+            media_title=movie["title"]
         )
         db.session.add(new_comment)
         db.session.commit()
-        flash("Comment added!")
+        flash("Comment added!", "toast")  # Change from default to "toast"
         return redirect(url_for("view_movie", movie_id=movie_id))
 
     comments = (
@@ -263,8 +260,6 @@ def view_movie(movie_id):
         user_favorites=user_favorites,
     )
     
-
-
 # for shows
 @app.route("/episode/<int:episode_id>", methods=["GET", "POST"])
 def view_episode(episode_id):
@@ -294,11 +289,12 @@ def view_episode(episode_id):
             timestamp=timestamp_seconds,
             user_id=current_user.id,
             gif_url = form.gif_url.data,
-            episode_id=int(episode_id)
+            episode_id=int(episode_id),
+            media_title=f"S:{episode["season_number"]} E:{episode["episode_number"]}: {episode["episode_name"]}"
         )
         db.session.add(new_comment)
         db.session.commit()
-        flash("Comment added!")
+        flash("Comment added!", "toast")  # Change all instances
         return redirect(url_for("view_episode", episode_id=episode_id))
 
     comments = (
@@ -392,12 +388,12 @@ def view_anime_episode(episode_id):
             gif_url=form.gif_url.data,
             user_id=current_user.id,
             episode_id=int(episode_id),
+            media_title=episode["episode_title"]
         )
         db.session.add(new_comment)
         db.session.commit()
-        flash("Comment added!")
+        flash("Comment added!", "toast")
         return redirect(url_for("view_anime_episode", episode_id=episode_id))
-
     comments = (
         Comment.query.filter_by(episode_id=int(episode_id))
         .order_by(Comment.timestamp)
@@ -415,7 +411,8 @@ def view_anime_episode(episode_id):
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
-        user_favorites=user_favorites
+        user_favorites=user_favorites,
+        comment_media_id=episode["episode_id"],
     )
 def get_user_favorites():
     if current_user.is_authenticated:
@@ -611,20 +608,21 @@ def profile():
     grand_total_seconds = total_movie_seconds + total_show_seconds + total_anime_seconds
     grand_total_hours, grand_total_minutes = seconds_to_hours_minutes(grand_total_seconds)
 
-    # profile picture
-    default_profile_pic_url = url_for('static', filename='images/default_profile.jpg')
+    recent_comments_query = (
+        db.session.query(Comment, History.title)
+        .join(History, Comment.episode_id == History.media_id)
+        .filter(Comment.user_id == current_user.id)
+        .order_by(Comment.created_at.desc())
+        .limit(5)
+    )
 
-    user_profile_pic_url = getattr(current_user, 'profile_pic_url', None)
-    if user_profile_pic_url:
-        profile_pic_to_display = user_profile_pic_url
-    else:
-        profile_pic_to_display = default_profile_pic_url
+    # Format for display
+    recent_comments = Comment.query.order_by(Comment.created_at.desc()).limit(5).all()
 
     # Pass data to the template
     return render_template(
         'profile.html',
         user=current_user,
-        profile_pic_url=profile_pic_to_display,
         stats={
             'movies_watched': movies_watched_count,
             'shows_watched': shows_watched_count,
@@ -638,7 +636,8 @@ def profile():
             'total_anime_minutes': total_anime_minutes,
             'total_watched_hours': grand_total_hours,
             'total_watched_minutes': grand_total_minutes,
-        }
+        },
+        recent_comments=recent_comments
     )
 
 @app.route('/update_watch_time', methods=['POST'])
@@ -667,9 +666,9 @@ def update_watch_time():
     try:
         if media_type == 'movie':
             user.total_movie_seconds += watched_seconds
-        elif media_type == 'tv':
+        elif media_type == 'tv' or media_type == 'episode':
             user.total_show_seconds += watched_seconds
-        elif media_type == 'anime':
+        elif media_type == 'anime' or media_type == "anime_episode":
             user.total_anime_seconds += watched_seconds
         else:
             return jsonify(success=False, message="Unknown media type"), 400
@@ -703,9 +702,9 @@ def update_watch_time_beacon():
     try:
         if media_type == 'movie':
             user.total_movie_seconds += watched_seconds
-        elif media_type == 'tv':
+        elif media_type == 'tv' or media_type == 'episode':
             user.total_show_seconds += watched_seconds
-        elif media_type == 'anime':
+        elif media_type == 'anime' or media_type == 'anime_episode':
             user.total_anime_seconds += watched_seconds
         else:
             return '', 400

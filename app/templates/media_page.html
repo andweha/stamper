@@ -31,9 +31,8 @@
 
         {% if media_type != 'anime_episode' and media.overview %}
         <p class="overview">{{ media.overview }}</p>
-        {% endif %}
-
         <p><strong>Rating:</strong> {{ media.vote_average }}</p>
+        {% endif %}
 
         {% if emoji_summary %}
         <p><strong>General Viewer Reaction:</strong> {{ emoji_summary }}</p>
@@ -62,7 +61,8 @@
             <div id="progress-container"
                 class="progress-container"
                 data-duration="{{ duration_secs }}"
-                data-epid="{{ comment_media_id }}">
+                data-epid="{{ comment_media_id }}"
+                data-media-type="{{ media_type }}">
 
               <div id="progress-bar" class="progress-bar">
                 <div id="progress-fill-mask" class="progress-fill-mask"></div>
@@ -85,10 +85,10 @@
 
   <!-- COMMENT SECTION -->
   <section class="chat-wrapper">
-    <div class="comment-feed" id="comments-container">
-      <div class="comment-overlay" id="commentOverlay">
-        <button id="showCommentsBtn" class="show-comments-btn">Show Comments</button>
-      </div>
+    <div class="comments-toggle-wrapper">
+      <button id="showCommentsBtn" class="show-comments-btn">Show Comments</button>
+    </div>
+    <div class="comment-feed" id="comments-container" style="text-align:left;">
       {% for comment in comments %}
       <div class="comment-line" data-secs="{{ comment.timestamp }}">
         <strong>{{ comment.user.username }}</strong>
@@ -97,9 +97,9 @@
           <span class="chat-text">: {{ comment.content }}</span>
         {% endif %}
         {% if comment.gif_url %}
-          <div class="chat-gif-wrapper">
+          <!-- <div class="chat-gif-wrapper">
             <img src="{{ comment.gif_url }}" alt="GIF" class="comment-gif">
-          </div>
+          </div> -->
         {% endif %}
       </div>
       {% endfor %}
@@ -118,6 +118,7 @@
         </div>
         {{ form.submit(class_='comment-submit') }}
       </div>
+          <!-- Selected GIF preview inside form -->
     </form>
     {% else %}
     <p><a href="{{ url_for('login') }}">Log in</a> to leave a comment.</p>
@@ -132,4 +133,5 @@
 <script src="{{ url_for('static', filename='scripts/gif_popup.js') }}"></script>
 <script src="{{ url_for('static', filename='scripts/comments.js') }}"></script>
 <script src="{{ url_for('static', filename='scripts/favorites.js') }}"></script>
+<script src="{{ url_for('static', filename='scripts/toast.js') }}"></script>
 {% endblock scripts %}
