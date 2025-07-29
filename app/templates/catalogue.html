@@ -14,12 +14,21 @@
         <h1 class="section-header">🎬 Featured Movies</h1>
         <div class="movie-scroll" id="movieScroll">
             {% for movie in movies %}
-            <div class="movie-card">
-                <span class="rank-badge">#{{ loop.index }}</span>
-                <a href="{{ url_for('view_movie', movie_id=movie.tmdb_id)}}">
+                <a href="{{ url_for('view_movie', movie_id=movie.tmdb_id)}}" class="movie-card">
+                    <span class="rank-badge">#{{ loop.index }}</span>
                     <img src="{{ movie.poster_url }}" alt="{{ movie.title }}">
+                    <div class="media-overlay">
+                        <h3 class="overlay-title">{{ movie.title }}</h3>
+                        <p class="overlay-description">{{ (movie.overview or '')[:200] }}{% if movie.overview and movie.overview|length > 200 %}...{% endif %}</p>
+                        <button class="overlay-star star-button" data-show-id="{{ movie.tmdb_id }}" onclick="event.preventDefault(); event.stopPropagation();">
+                            {% if movie.tmdb_id in user_favorites %}
+                                ⭐
+                            {% else %}
+                                ☆
+                            {% endif %}
+                        </button>
+                    </div>
                 </a>
-            </div>
             {% endfor %}
         </div>
     </section>
@@ -31,6 +40,17 @@
             {% for show in tv_shows %}
             <a href="{{ url_for('get_media', media_id=show.tmdb_id)}}" class="media-link">
                 <img src="{{ show.poster_url }}" alt="{{ show.title }}">
+                <div class="media-overlay">
+                    <h3 class="overlay-title">{{ show.title }}</h3>
+                    <p class="overlay-description">{{ (show.overview or '')[:100] }}{% if show.overview and show.overview|length > 100 %}...{% endif %}</p>
+                    <button class="overlay-star star-button" data-show-id="{{ show.tmdb_id }}" onclick="event.preventDefault(); event.stopPropagation();">
+                        {% if show.tmdb_id in user_favorites %}
+                            ⭐
+                        {% else %}
+                            ☆
+                        {% endif %}
+                    </button>
+                </div>
             </a>
             {% endfor %}
         </div>
@@ -42,9 +62,17 @@
         <div class="featured-grid">
             {% for anime_show in anime %}
             <a href="{{ url_for('view_anime', anime_id=anime_show.anilist_id) }}" class="media-link">
-                <div>
-                    <img src="{{ anime_show.cover_url }}" alt="{{ anime_show.title_romaji }}">
-                    <!-- <p class="media-title">{{ anime_show.title_english or anime_show.title_romaji }}</p> -->
+                <img src="{{ anime_show.cover_url }}" alt="{{ anime_show.title_romaji }}">
+                <div class="media-overlay">
+                    <h3 class="overlay-title">{{ anime_show.title_english or anime_show.title_romaji }}</h3>
+                    <p class="overlay-description">{{ (anime_show.description or '')[:100] }}{% if anime_show.description and anime_show.description|length > 100 %}...{% endif %}</p>
+                    <button class="overlay-star star-button" data-show-id="{{ anime_show.anilist_id }}" onclick="event.preventDefault(); event.stopPropagation();">
+                        {% if anime_show.anilist_id in user_favorites %}
+                            ⭐
+                        {% else %}
+                            ☆
+                        {% endif %}
+                    </button>
                 </div>
             </a>
             {% endfor %}
@@ -52,4 +80,8 @@
     </section>
 </div>
 </main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='scripts/favorites.js') }}"></script>
 {% endblock %}

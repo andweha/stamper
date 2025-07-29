@@ -12,16 +12,16 @@
   {% if item %}
   <div class="Details">
     <div class="title-poster">
-      <h1>{{ item.title }}</h1>
+      <h1 class="movie-title">{{ item.title }}</h1>
         {% if item.poster_url %}
-        <img src="{{ item.poster_url }}" alt="{{ item.title }}" width="300">
+        <img class="movie-poster" src="{{ item.poster_url }}" alt="{{ item.title }}" width="300">
         {% endif %}
     </div> <!-- Title poster ends here-->
     <div class="Overview">
-      <p>{{ item.overview }}</p>
-      <p><strong>Type:</strong> {{ item.media_type|upper }}</p>
-      <p><strong>Release Date:</strong> {{ item.release_date }}</p>
-      <p><strong>Rating:</strong> {{ item.vote_average }}</p>
+      <p class="item-overview">{{ item.overview }}</p>
+      <p><strong >📺 Type:</strong> {{ item.media_type|upper }}</p>
+      <p><strong >📅 Release Date:</strong> {{ item.release_date }}</p>
+      <p><strong>⭐ Rating:</strong> {{ item.vote_average }}</p>
     </div> <!-- Overview ends here-->
 
 
@@ -53,6 +53,7 @@
   {% endif %}
 </div>
 </main>
+<script src="{{ url_for('static', filename='scripts/dropdown.js') }}"></script>
 {% endblock content %}
 
 {% block scripts %}
