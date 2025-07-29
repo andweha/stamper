@@ -97,25 +97,9 @@ def seconds_to_hours_minutes(total_seconds):
 def catalogue():
     conn = sqlite3.connect(MEDIA_DB_PATH)
 
-    movie_query = """
-        SELECT fm.*, m.overview, m.vote_average, m.poster_url, m.title
-        FROM featured_movies fm
-        INNER JOIN media m ON fm.tmdb_id = m.tmdb_id
-        ORDER BY fm.rank ASC 
-        LIMIT 50
-    """
-    
-    tv_query = """
-        SELECT ftv.*, m.overview, m.vote_average, m.poster_url, m.title
-        FROM featured_tv ftv
-        INNER JOIN media m ON ftv.tmdb_id = m.tmdb_id
-        ORDER BY ftv.rank ASC 
-        LIMIT 10
-    """
-    
-    # Anime query remains the same since it already has description
+    movie_query = "SELECT * FROM featured_movies ORDER BY rank ASC LIMIT 50"
+    tv_query = "SELECT * FROM featured_tv ORDER BY rank ASC LIMIT 10"
     anime_query = "SELECT * FROM anime ORDER BY trending DESC LIMIT 10"
-
 
     def fetch_rows(conn, query):
         cursor = conn.execute(query)
@@ -125,15 +109,13 @@ def catalogue():
     movies = fetch_rows(conn, movie_query)
     tv_shows = fetch_rows(conn, tv_query)
     anime = fetch_rows(conn, anime_query)
-    user_favorites = get_user_favorites()  # Add this line
+
     conn.close()
 
     users = User.query.all()
     return render_template(
-        "catalogue.html", movies=movies, tv_shows=tv_shows, anime=anime, users=users, user_favorites=user_favorites
+        "catalogue.html", movies=movies, tv_shows=tv_shows, anime=anime, users=users
     )
-
-
 
 @app.route("/media/<int:media_id>")
 def get_media(media_id):
@@ -237,7 +219,8 @@ def view_movie(movie_id):
             timestamp=timestamp_seconds,
             user_id=current_user.id,
             episode_id=int(movie_id),
-            gif_url=form.gif_url.data
+            gif_url=form.gif_url.data,
+            media_title=movie["title"]
         )
         db.session.add(new_comment)
         db.session.commit()
@@ -265,8 +248,6 @@ def view_movie(movie_id):
         user_favorites=user_favorites,
     )
     
-
-
 # for shows
 @app.route("/episode/<int:episode_id>", methods=["GET", "POST"])
 def view_episode(episode_id):
@@ -296,7 +277,8 @@ def view_episode(episode_id):
             timestamp=timestamp_seconds,
             user_id=current_user.id,
             gif_url = form.gif_url.data,
-            episode_id=int(episode_id)
+            episode_id=int(episode_id),
+            media_title=f"S:{episode["season_number"]} E:{episode["episode_number"]}: {episode["episode_name"]}"
         )
         db.session.add(new_comment)
         db.session.commit()
@@ -394,6 +376,7 @@ def view_anime_episode(episode_id):
             gif_url=form.gif_url.data,
             user_id=current_user.id,
             episode_id=int(episode_id),
+            media_title=episode["episode_title"]
         )
         db.session.add(new_comment)
         db.session.commit()
@@ -417,7 +400,8 @@ def view_anime_episode(episode_id):
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
-        user_favorites=user_favorites
+        user_favorites=user_favorites,
+        comment_media_id=episode["episode_id"],
     )
 def get_user_favorites():
     if current_user.is_authenticated:
@@ -623,15 +607,7 @@ def profile():
     )
 
     # Format for display
-    recent_comments = [
-        {
-            'content': comment.content,
-            'timestamp': comment.timestamp,
-            'media_title': title,
-            'gif_url': comment.gif_url
-        }
-        for comment, title in recent_comments_query
-    ]
+    recent_comments = Comment.query.order_by(Comment.created_at.desc()).limit(5).all()
 
     # Pass data to the template
     return render_template(
@@ -680,9 +656,9 @@ def update_watch_time():
     try:
         if media_type == 'movie':
             user.total_movie_seconds += watched_seconds
-        elif media_type == 'tv':
+        elif media_type == 'tv' or media_type == 'episode':
             user.total_show_seconds += watched_seconds
-        elif media_type == 'anime':
+        elif media_type == 'anime' or media_type == "anime_episode":
             user.total_anime_seconds += watched_seconds
         else:
             return jsonify(success=False, message="Unknown media type"), 400
@@ -716,9 +692,9 @@ def update_watch_time_beacon():
     try:
         if media_type == 'movie':
             user.total_movie_seconds += watched_seconds
-        elif media_type == 'tv':
+        elif media_type == 'tv' or media_type == 'episode':
             user.total_show_seconds += watched_seconds
-        elif media_type == 'anime':
+        elif media_type == 'anime' or media_type == 'anime_episode':
             user.total_anime_seconds += watched_seconds
         else:
             return '', 400

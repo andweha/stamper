@@ -42,13 +42,13 @@
                     <ul class="recent-comments-list">
                     {% for comment in recent_comments %}
                         <li class="recent-comment-item">
-                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem; text-align:left">
                                 <div>
                                     <code class="comment-timestamp">
                                         {{ "%02d:%02d:%02d"|format(comment.timestamp // 3600, (comment.timestamp % 3600) // 60, comment.timestamp % 60) }}
                                     </code>
                                     on <strong>{{ comment.media_title }}</strong>:
-                                    <span class="comment-snippet">"{{ comment.content[:80] }}{% if comment.content|length > 80 %}...{% endif %}"</span>
+                                    <span class="comment-snippet">{{ comment.content[:80] }}{% if comment.content|length > 80 %}...{% endif %}</span>
                                 </div>
 
                                 {% if comment.gif_url %}
