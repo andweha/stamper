@@ -78,11 +78,10 @@
         {% endif %}
       {% endwith %}
       {% block content %}{% endblock %}
-      {% block scripts %}
-      <script src="{{ url_for('static', filename='scripts/search_bar.js') }}"></script>
-      {% endblock %}
+      {% block scripts %}{% endblock %}
     </div>
   </main>
+  <script src="{{ url_for('static', filename='scripts/search_bar.js') }}"></script>
 </body>
 
 </html>
