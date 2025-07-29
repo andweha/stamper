@@ -1,4 +1,40 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("showCommentsBtn");
+  const commentsContainer = document.getElementById("comments-container");
+  
+  // Get saved state from localStorage, default to false (hidden)
+  let commentsVisible = localStorage.getItem("commentsVisible") === "true";
+
+  if (btn && commentsContainer) {
+    // Set initial state based on saved preference
+    if (commentsVisible) {
+      commentsContainer.classList.remove("hidden");
+      btn.textContent = "Hide Comments";
+    } else {
+      commentsContainer.classList.add("hidden");
+      btn.textContent = "Show Comments";
+    }
+
+    btn.addEventListener("click", () => {
+      commentsVisible = !commentsVisible;
+      
+      // Save state to localStorage
+      localStorage.setItem("commentsVisible", commentsVisible.toString());
+      
+      if (commentsVisible) {
+        // Show comments
+        commentsContainer.classList.remove("hidden");
+        btn.textContent = "Hide Comments";
+      } else {
+        // Hide comments
+        commentsContainer.classList.add("hidden");
+        btn.textContent = "Show Comments";
+      }
+    });
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("comments-container");
   if (!container) return;
 
@@ -17,7 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isUserAtBottom) {
       container.scrollTop = container.scrollHeight;
     }
-    
   }
 
   // Initial scroll on load
@@ -35,17 +70,6 @@ document.addEventListener("DOMContentLoaded", () => {
   comments.forEach((comment) => {
     observer.observe(comment, { attributes: true, attributeFilter: ["data-hidden", "style"] });
   });
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const overlay = document.getElementById("commentOverlay");
-  const btn = document.getElementById("showCommentsBtn");
-
-  if (overlay && btn) {
-    btn.addEventListener("click", () => {
-      overlay.style.display = "none";
-    });
-  }
 });
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -239,7 +239,7 @@ def view_movie(movie_id):
         )
         db.session.add(new_comment)
         db.session.commit()
-        flash("Comment added!")
+        flash("Comment added!", "toast")  # Change from default to "toast"
         return redirect(url_for("view_movie", movie_id=movie_id))
 
     comments = (
@@ -298,7 +298,7 @@ def view_episode(episode_id):
         )
         db.session.add(new_comment)
         db.session.commit()
-        flash("Comment added!")
+        flash("Comment added!", "toast")  # Change all instances
         return redirect(url_for("view_episode", episode_id=episode_id))
 
     comments = (
@@ -395,9 +395,8 @@ def view_anime_episode(episode_id):
         )
         db.session.add(new_comment)
         db.session.commit()
-        flash("Comment added!")
+        flash("Comment added!", "toast")
         return redirect(url_for("view_anime_episode", episode_id=episode_id))
-
     comments = (
         Comment.query.filter_by(episode_id=int(episode_id))
         .order_by(Comment.timestamp)
