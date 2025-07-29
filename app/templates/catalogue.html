@@ -10,7 +10,7 @@
 
 
     <!-- Top movies section, ranked format -->
-    <section class="media-section">
+    <section class="media-container">
         <h1 class="section-header">🎬 Featured Movies</h1>
         <div class="movie-scroll" id="movieScroll">
             {% for movie in movies %}
@@ -25,7 +25,7 @@
     </section>
 
     <!-- Featured Shows Grid -->
-    <section class="media-section">
+    <section class="media-container">
         <h1 class="section-header">📺 Featured TV Shows</h1>
         <div class="featured-grid">
             {% for show in tv_shows %}
@@ -37,7 +37,7 @@
     </section>
 
     <!-- Top Anime section -->
-    <section class="media-section">
+    <section class="media-container">
         <h1 class="section-header">🌸 Featured Anime</h1>
         <div class="featured-grid">
             {% for anime_show in anime %}
