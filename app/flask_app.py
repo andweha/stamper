@@ -213,7 +213,9 @@ def view_movie(movie_id):
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
+        comment_media_id=movie["tmdb_id"]
     )
+    
 
 
 # for shows
@@ -260,15 +262,17 @@ def view_episode(episode_id):
 
     comment_block = get_comments(episode_id)
     emoji_summary = summarize_comments(comment_block) if comment_block else ""
-
+    
     return render_template(
         "media_page.html",
         media=episode,
-        media_type="episode",
+        media_type="tv",
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
+        comment_media_id=episode["episode_id"],
     )
+
 
 # anime
 @app.route("/anime/<int:anime_id>")
@@ -370,6 +374,12 @@ def delete_comment(comment_id):
     db.session.commit()
     flash("Comment deleted.", "success")
     return redirect(request.referrer or url_for("catalogue"))
+
+@app.route("/api/comments/<int:media_id>")
+def get_comment_timestamps(media_id):
+    comments = Comment.query.filter_by(episode_id =media_id).all()
+    timestamps = [c.timestamp for c in comments]
+    return jsonify(timestamps)
 
 @app.route("/search_gifs")
 def search_gifs():

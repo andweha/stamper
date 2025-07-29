@@ -64,7 +64,7 @@
       <a href="{{ url_for('login') }}" class="btn-top">Login</a>
     {% endif %}
   </div>
-  <main role="main" class="{% if request.endpoint in ['login', 'register'] %}no-sidebar{% else %}with-sidebar{% endif %}">
+  <main role="main" class="{% if request.endpoint in ['login', 'register', 'media_page'] %}no-sidebar{% else %}with-sidebar{% endif %}">
   
       <div>
         {% with messages = get_flashed_messages(with_categories=true) %}
