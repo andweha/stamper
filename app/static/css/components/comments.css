@@ -1,73 +1,187 @@
-.comment {
+/* === Layout: Chat Wrapper & Feed === */
+.chat-wrapper {
+  width: 100%;
+  max-width: clamp(90ch, 90%, 1400px);
+  margin: 2rem auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  overflow: hidden;
   position: relative;
-  background: #fafafa;
-  border: 1px solid #e1e1e1;
-  border-left: 4px solid #6366f1;
-  border-radius: 6px;
-  padding: 1rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-sizing: border-box;
 }
 
-.comments-container{
+.comment-feed,
+.comments-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
-  padding-right: 0.5rem;
+  padding: 1rem;
+  margin: 0;
+  gap: 0.25rem;
+  scroll-behavior: smooth;
+  background-color: #1e1e2f;
 }
 
-.comment-header {
-  font-size: 0.9rem;
-  color: #555;
-  margin-bottom: 0.4rem;
+/* === Individual Comment === */
+.comment-line {
+  display: block;
+  color: #f5f5f7;
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
-
-.comment[data-hidden="true"] {
+.comment-line strong,
+.comment-line code,
+.comment-line .chat-text {
+  display: inline;
+  vertical-align: baseline;
+}
+.comment-line code {
+  font-size: 0.75rem;
+  color: #aaa;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+.comment-line[data-hidden="true"] {
   display: none;
 }
-
-.comment-header code {
-  background: #f3f3f3;
-  padding: 0 0.3rem;
-  border-radius: 3px;
-  font-size: 0.85rem;
+.chat-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.chat-gif-wrapper {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+.comment-gif,
+.comment-body img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(8rem, 25vh);
+  display: block;
+  object-fit: contain;
+  margin: 0 0 0.25rem;
+  border-radius: 6px;
 }
 
-.comment-body {
-  line-height: 1.45;
+/* === Comment Input === */
+.chat-input-form {
+  padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #1e1e2f;
+  border-top: 1px solid #444;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.comment-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
 }
 
 .comment-with-gif {
   position: relative;
+  flex: 1;
   display: flex;
-  align-items: center;
+  align-items: stretch;
 }
 
 .comment-with-gif textarea {
-  flex: 1;
-  padding-right: 2.5rem;
+  width: 100%;
+  padding: 0.5rem 2.5rem 0.5rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  resize: none;
+  box-sizing: border-box;
+  overflow-y: hidden;
+}
+
+/* === Timestamp Input === */
+.timestamp-inline input {
+  font-size: 0.85rem;
+  padding: 0.5rem 0.6rem;
+  width: auto;
+  min-width: 60px;
+  height: 2.25rem;
+  align-self: center;
+  color: #000;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+/* === Submit Button === */
+.comment-submit,
+.show-comments-btn {
+  padding: 0.5rem 0.75rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  white-space: nowrap;
+  background-color: #6366f1;
+  transition: background-color 0.2s ease;
+  align-self: center;
+}
+
+.comment-submit:hover,
+.show-comments-btn:hover {
+  background-color: #4f51c2;
+}
+
+.show-comments-btn {
+  font-size: 1rem;
+  z-index: 11;
+}
+
+.form-error {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+/* === GIF Picker === */
+.gif-popup-wrapper {
+  position: relative;
+  overflow: visible;
 }
 
 .gif-icon-btn {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
-  background: none;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25em 0.5em;
+  font-size: 0.75rem;
+  font-weight: bold;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+  color: var(--btn-light-text, #fff);
+  background-color: var(--btn-dark-bg, #2a2a3d);
   border: none;
-  font-size: 1.2rem;
+  border-radius: 0.25rem;
   cursor: pointer;
-  opacity: 0.8;
-  transition: transform 0.2s;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
-
 .gif-icon-btn:hover {
-  transform: scale(1.1);
-  opacity: 1;
-}
-
-.gif-popup-wrapper {
-  position: relative;
+  background-color: var(--btn-dark-hover, #1e1e2f);
+  transform: scale(1.05);
 }
 
 .gif-popup {
-  position: relative;
+  position: absolute;
   bottom: 120%;
   right: 0;
   width: 300px;
@@ -89,21 +203,20 @@
 .gif-popup-header input {
   flex: 1;
   padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
   font-size: 0.9rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 
 .gif-popup-header button {
   padding: 6px 10px;
-  background-color: #6366f1;
+  font-size: 0.9rem;
   color: #fff;
+  background-color: #6366f1;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.9rem;
 }
-
 .gif-popup-header button:hover {
   background-color: #4f51c2;
 }
@@ -126,16 +239,53 @@
   border-radius: 6px;
   overflow: hidden;
 }
-
 .gif-item img {
   width: 100%;
   height: auto;
-  object-fit: cover;
   display: block;
-  border-radius: 6px;
+  object-fit: cover;
   cursor: pointer;
+  border-radius: 6px;
+  margin: 0;
 }
 
+/* === Overlay === */
+.comment-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(10px);
+  background-color: rgba(0, 0, 0, 0.35);
+  transition: opacity 0.3s ease;
+  pointer-events: auto;
+}
+.comment-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* === Utility === */
 .hidden {
   display: none;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .media-page-wrapper,
+  .Details {
+    flex-direction: column;
+  }
+
+  .poster-wrapper {
+    width: 100%;
+    max-height: 300px;
+  }
+
+  .comment-toolbar-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
