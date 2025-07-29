@@ -27,40 +27,6 @@
           {% else %}
             {{ media.title }}
           {% endif %}
-        
-          {% if emoji_summary %}
-            <p><strong>General Viewer Reaction:</strong> {{ emoji_summary }}</p>
-          {% endif %}
-        </div> <!-- Overview ends here-->
-      </div><!-- Media Details div ends here-->
-      
-      <hr>
-      
-      <!-- Fake playback bar -->
-      <div class="player">
-        <button id="play-btn" type="button" class="play-btn" aria-label="Play">
-          ▶
-        </button>
-        <div id="progress-container"
-             class="progress-container"
-             data-duration="{{ media.duration * 60 if media_type == 'anime_episode' and media.duration is not none else media.runtime * 60 if media.runtime is not none else 3600 }}"
-             data-media-type="{% if media_type == 'movie' %}movie{% elif media_type == 'episode' %}tv{% elif media_type == 'anime_episode' %}anime{% else %}unknown{% endif %}"
-             data-media-id="{% if media_type == 'movie' %}{{ media.tmdb_id }}{% elif media_type == 'episode' %}{{ media.tv_id }}{% elif media_type == 'anime_episode' %}{{ media.anilist_id }}{% else %}0{% endif %}">
-          <div id="progress-bar" class="progress-bar"></div>
-          <span id="progress-tooltip" class="progress-tooltip"></span>
-        </div> <!-- end progress container div -->
-      </div><!-- end the play div -->
-    </div><!-- end movie-main -->
-
-    <!-- Right side - Comments sidebar -->
-    <div class="comments-sidebar">
-      <!-- Comment Input Section -->
-      <div class="comment-input-section">
-        <!-- Add a comment section -->
-        {% if current_user.is_authenticated %}
-        <h3>Add a Comment</h3>
-        <form method="POST">
-          {{ form.hidden_tag() }}
         </h2>
 
         {% if media_type != 'anime_episode' and media.overview %}
