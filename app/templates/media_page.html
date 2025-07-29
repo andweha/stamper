@@ -56,7 +56,9 @@
         </button>
         <div id="progress-container"
              class="progress-container"
-             data-duration="{{ media.duration * 60 if media_type == 'anime_episode' and media.duration is not none else media.runtime * 60 if media.runtime is not none else 3600 }}">
+             data-duration="{{ media.duration * 60 if media_type == 'anime_episode' and media.duration is not none else media.runtime * 60 if media.runtime is not none else 3600 }}"
+             data-media-type="{% if media_type == 'movie' %}movie{% elif media_type == 'episode' %}tv{% elif media_type == 'anime_episode' %}anime{% else %}unknown{% endif %}"
+             data-media-id="{% if media_type == 'movie' %}{{ media.tmdb_id }}{% elif media_type == 'episode' %}{{ media.tv_id }}{% elif media_type == 'anime_episode' %}{{ media.anilist_id }}{% else %}0{% endif %}">
           <div id="progress-bar" class="progress-bar"></div>
           <span id="progress-tooltip" class="progress-tooltip"></span>
         </div> <!-- end progress container div -->

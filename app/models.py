@@ -12,6 +12,10 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(60), nullable=False)
     profile_pic_url = db.Column(db.String(200), nullable=True, default=None)
 
+    total_movie_seconds = db.Column(db.Integer, default=0, nullable=False)
+    total_show_seconds = db.Column(db.Integer, default=0, nullable=False)
+    total_anime_seconds = db.Column(db.Integer, default=0, nullable=False)
+
     def __repr__(self):
         return f"User('{self.username}')"
 

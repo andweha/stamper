@@ -10,13 +10,11 @@
     const toggle   = document.getElementById('toggle-comments');
     if (!bar) return;
   
-
+    const mediaType = bar.dataset.mediaType; 
+    const mediaId = bar.dataset.mediaId; 
 
 
     /* unique storage key for THIS episode */
-
-    
-
     // This key is for storing progress bar time elapsed in local storage based; This creates a specific key to a specific episode/ movie
     const STORAGE_KEY = `episode:${bar.dataset.epid}:${location.pathname}`;
   
@@ -40,6 +38,9 @@
     let playing = false; //bool
     let elapsed = Number(localStorage.getItem(STORAGE_KEY)) || 0; // pull elapsed time from local storage, else 0
     let timerId = null;
+
+    let watchedTimeThisSession = 0;
+    const WATCH_TIME_UPDATE_INTERVAL = 10;
   
     /* comment‑reveal helper */
     function updateComments()  {
@@ -68,11 +69,21 @@
     /* tick every second */
     function tick() {
       elapsed += 1;
+      watchedTimeThisSession += 1; // Accumulate watch time
+        if (watchedTimeThisSession >= WATCH_TIME_UPDATE_INTERVAL) {
+            sendWatchTimeToServer(watchedTimeThisSession);
+            watchedTimeThisSession = 0;
+        }
+
       if (elapsed >= duration) { //once the media has be watched completed
         elapsed = duration;
         clearInterval(timerId);
         playing = false;
         localStorage.removeItem(STORAGE_KEY);    // clear the key from local storage
+        if (watchedTimeThisSession > 0) {
+            endWatchTimeToServer(watchedTimeThisSession);
+            watchedTimeThisSession = 0;
+        }
       }
       render();
     }
@@ -84,6 +95,10 @@
         timerId = setInterval(tick, 1000); //update every second
       } else {
         clearInterval(timerId);
+        if (watchedTimeThisSession > 0) {
+            sendWatchTimeToServer(watchedTimeThisSession);
+            watchedTimeThisSession = 0;
+        }
       }
       render(); //display the new state of the progress 
     });
@@ -110,8 +125,14 @@
     bar.addEventListener('click', e => {
       const rect = bar.getBoundingClientRect();
       const pct  = (e.clientX - rect.left) / rect.width;
-      elapsed = pct * duration; 
+
+      elapsed = pct * duration;
       render();
+      
+      if (playing) {
+          clearInterval(timerId);
+          timerId = setInterval(tick, 1000);
+      }
     });
   
     /* === show / hide comments === */
@@ -122,6 +143,59 @@
                              ? 'Show Comments' : 'Hide Comments';
       });
     }
+
+    function sendWatchTimeToServer(seconds) {
+        if (!mediaType || !mediaId || seconds <= 0 || !Number.isFinite(seconds)) {
+            console.warn("Cannot send watch time: Missing media type, ID, or invalid seconds.", { mediaType, mediaId, seconds });
+            return;
+        }
+
+        const payload = {
+            watched_seconds: seconds,
+            media_type: mediaType,
+            media_id: mediaId
+        };
+
+        if (navigator.sendBeacon) {
+            const formData = new FormData();
+            for (const key in payload) {
+                formData.append(key, payload[key]);
+            }
+            navigator.sendBeacon('/update_watch_time_beacon', formData);
+            console.log(`Beacon sent ${seconds.toFixed(2)}s for ${mediaType} ${mediaId}`);
+        } else {
+            fetch('/update_watch_time', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+                keepalive: true 
+            })
+            .then(response => {
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json();
+                } else {
+                    return response.text().then(text => { throw new Error(text || "Non-JSON response"); });
+                }
+            })
+            .then(data => {
+                if (data && !data.success) { 
+                    console.error('Failed to update watch time:', data.message);
+                } else {
+                    console.log(`Fetch sent ${seconds.toFixed(2)}s for ${mediaType} ${mediaId}. Server response:`, data ? data.message : "No specific message.");
+                }
+            })
+            .catch(error => console.error('Error sending watch time:', error));
+        }
+    }
+
+    window.addEventListener('beforeunload', () => {
+        if (watchedTimeThisSession > 0) {
+            sendWatchTimeToServer(watchedTimeThisSession);
+        }
+    });
   
   
     render();               // initial paint with restored time

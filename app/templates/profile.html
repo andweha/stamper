@@ -17,22 +17,25 @@
             <section class="watched-categories-section">
                 <div class="categories-grid">
                     <div class="category-card">
-                        <div class="category-icon">
-                            <i class="fas fa-film"></i> </div>
                         <p class="category-count">{{ stats.movies_watched }}</p>
                         <h3 class="category-label">Movies Watched</h3>
                     </div>
                     <div class="category-card">
-                        <div class="category-icon">
-                            <i class="fas fa-tv"></i> </div>
                         <p class="category-count">{{ stats.shows_watched }}</p>
                         <h3 class="category-label">TV Shows</h3>
                     </div>
                     <div class="category-card">
-                        <div class="category-icon">
-                            <i class="fas fa-bolt"></i> </div>
                         <p class="category-count">{{ stats.anime_watched }}</p>
                         <h3 class="category-label">Anime Series</h3>
+                    </div>
+                    <div class="category-card">
+                        <p class="category-count">
+                            {{ stats.total_watched_hours }}h
+                            {% if stats.total_watched_minutes is not none %}
+                                <span class="watch-time-details">{{ stats.total_watched_minutes }}m</span>
+                            {% endif %}
+                        </p>
+                        <h3 class="category-label">Total Hours Watched</h3>
                     </div>
                 </div>
             </section>

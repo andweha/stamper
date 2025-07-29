@@ -70,14 +70,14 @@
 
 .categories-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr 1fr 1fr 1.4fr;
     gap: 1.8rem;
 }
 
 .category-card {
     background-color: #1a1a1a;
     border-radius: 8px;
-    padding: 2rem;
+    padding: 2rem 6rem;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -91,14 +91,8 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
 }
 
-.category-icon {
-    font-size: 3.5rem;
-    color: #6366f1;
-    margin-bottom: 1rem;
-}
-
 .category-count {
-    font-size: 3.2rem;
+    font-size: 2.8rem;
     font-weight: 800;
     color: #ffffff;
     margin: 0;
@@ -106,7 +100,7 @@
 }
 
 .category-label {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: #ffffff;
     margin-top: 0.5rem;
     font-weight: 500;
