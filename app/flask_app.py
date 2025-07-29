@@ -98,17 +98,15 @@ def catalogue():
     conn = sqlite3.connect(MEDIA_DB_PATH)
 
     movie_query = """
-        SELECT fm.*, m.overview, m.vote_average, m.poster_url, m.title
+        SELECT *
         FROM featured_movies fm
-        INNER JOIN media m ON fm.tmdb_id = m.tmdb_id
         ORDER BY fm.rank ASC 
         LIMIT 50
     """
     
     tv_query = """
-        SELECT ftv.*, m.overview, m.vote_average, m.poster_url, m.title
+        SELECT *
         FROM featured_tv ftv
-        INNER JOIN media m ON ftv.tmdb_id = m.tmdb_id
         ORDER BY ftv.rank ASC 
         LIMIT 10
     """
@@ -549,7 +547,6 @@ def api_search():
     #     ])
 
     # Step 2: Fallback to TMDB if no local matches
-    TMDB_API_KEY = os.getenv("TMDB_API_KEY")
     url = f"https://api.themoviedb.org/3/search/multi"
     res = requests.get(url, params={
         "api_key": TMDB_API_KEY,
