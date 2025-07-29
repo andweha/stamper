@@ -8,10 +8,6 @@
   object-fit: cover;
 }
 
-.movie-card:hover {
-  transform: translateY(-5px);
-}
-
 .rank-badge {
   position: absolute;
   top: 8px;
