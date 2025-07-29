@@ -11,6 +11,10 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(20), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
 
+    total_movie_seconds = db.Column(db.Integer, default=0, nullable=False)
+    total_show_seconds = db.Column(db.Integer, default=0, nullable=False)
+    total_anime_seconds = db.Column(db.Integer, default=0, nullable=False)
+
     def __repr__(self):
         return f"User('{self.username}')"
 
@@ -33,9 +37,6 @@ class Favorite(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     media_id = db.Column(db.Integer, nullable=False)
     __table_args__ = (db.UniqueConstraint('user_id', 'media_id'),)
-
-
-
 
 class History(db.Model):
     id = db.Column(db.Integer, primary_key=True)
