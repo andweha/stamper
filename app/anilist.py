@@ -19,7 +19,6 @@ query ($page: Int, $perPage: Int) {
         english
       }
       episodes
-      
       averageScore
       trending
       genres

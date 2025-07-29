@@ -1,0 +1,125 @@
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-color-light, #ffffff);
+}
+
+/* card container */
+.history-item-card {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  transition: transform 0.2s ease;
+  box-sizing: border-box;
+  min-width: 0;
+  border-radius: 8px;
+}
+
+.history-item-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-shadow-hover, 0 8px 16px rgba(0, 0, 0, 0.3));
+}
+
+/* card content */
+.history-card-inner {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #1e1e1e;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  flex-grow: 1;
+  height: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* media img */
+.history-card-inner img {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.history-card-inner img:hover {
+  transform: scale(1.03);
+}
+
+/* info below img */
+.history-card-info-bar {
+  min-height: 70px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: #121212;
+  padding: 5px;
+  border-top: 1px solid #222;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  flex-grow: 1;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* title */
+.history-card-info-bar .media-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: left;
+}
+
+/* media type */
+.history-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #ffffff;
+  padding-left: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.media-type-badge {
+  background-color: #6366f1;
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.7em;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* date watched */
+.watched-date-line {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #bbb;
+  text-align: center;
+  background-color: #1e1e1e;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* could improve styling here */
+.no-history-message {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+}

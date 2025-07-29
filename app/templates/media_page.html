@@ -1,127 +1,139 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="media-page-wrapper">
-
-  <!-- MEDIA SECTION -->
-  <section class="media-section">
-    <div class="media-details">
-      {% if media.still_url or media.thumbnail or media.poster_url %}
-      <div class="poster-wrapper">
-        <img src="{{ media.still_url or media.thumbnail or media.poster_url }}" alt="{{ media.title or media.episode_title or media.episode_name }}">
-      </div>
-      {% endif %}
-
-      <div class="title-poster">
-        <h2>
-          {% if media_type == 'episode' %}
-            Episode {{ media.episode_number }}: {{ media.episode_name }}
-          {% elif media_type == 'anime_episode' %}
-            {{ media.episode_title }}
+<main class="main-container">
+  <div class="Container">
+    <div class="main-content-wrapper">
+      <div class="movie-main">
+        {% if media_type == 'movie' %}
+        <button class="star-button" data-show-id="{% if media_type == 'movie' %}{{ media.tmdb_id }}{% elif media_type == 'episode' %}{{ media.tv_id }}{% elif media_type == 'anime_episode' %}{{ anime.anilist_id }}{% else %}{{ media.tmdb_id }}{% endif %}">
+          {% if media.tmdb_id in user_favorites %}
+            ⭐
           {% else %}
-            {{ media.title }}
+            ☆
           {% endif %}
-        </h2>
-
-        {% if media_type != 'anime_episode' and media.overview %}
-        <p class="overview">{{ media.overview }}</p>
+        </button>
         {% endif %}
 
-        <p><strong>Rating:</strong> {{ media.vote_average }}</p>
+        <div class="Details">
+          <div class="title-poster">
+            {% if media_type == 'episode' %}
+              <h2>Episode {{ media.episode_number }}: {{ media.episode_name }}</h2>
+            {% elif media_type == 'anime_episode' %}
+              <h2>{{ media.episode_title }}</h2>
+              {% if media.thumbnail %}
+                <img src="{{ media.thumbnail }}" alt="{{ media.episode_title }}">
+              {% endif %}
+            {% else %}
+              <h2>{{ media.title }}</h2>
+              {% if media.poster_url %}
+                <img src="{{ media.poster_url }}" alt="{{ media.title }}">
+              {% endif %}
+            {% endif %}
+          </div>
 
-        {% if emoji_summary %}
-        <p><strong>General Viewer Reaction:</strong> {{ emoji_summary }}</p>
-        {% endif %}
-      </div>
-    </div>
+          <div class="Overview">
+            {% if media_type != 'anime_episode' and media.overview %}
+              <p class="overview">{{ media.overview }}</p>
+            {% endif %}
 
-    <!-- PLAYER SECTION (Always renders) -->
-    {% set duration_secs = (
-      media.duration * 60 if media_type == 'anime_episode' and media.duration is not none else
-      media.runtime * 60 if media.runtime is not none else
-      3600
-    ) %}
+            <p><strong>Rating:</strong> {{ media.vote_average }}</p>
 
-    <div class="player">
-      <div class="player-row">
-        <div class="controls-group">
-          <button id="skip-back" class="circle-btn" aria-label="Skip Backward 15s">⏪</button>
-          <button id="play-btn" class="circle-btn play-btn" aria-label="Play">▶</button>
-          <button id="skip-forward" class="circle-btn" aria-label="Skip Forward 15s">⏩</button>
+            {% if emoji_summary %}
+              <p><strong>General Viewer Reaction:</strong> {{ emoji_summary }}</p>
+            {% endif %}
+          </div>
         </div>
 
-        <div class="progress-stack-row">
-          <div class="progress-wrapper">
-            <div class="heatmap-overlay"></div>
-            <div id="progress-container"
-                class="progress-container"
-                data-duration="{{ duration_secs }}"
-                data-epid="{{ comment_media_id }}">
+        <!-- PLAYER SECTION -->
+        {% set duration_secs = (
+          media.duration * 60 if media_type == 'anime_episode' and media.duration is not none else
+          media.runtime * 60 if media.runtime is not none else
+          3600
+        ) %}
 
-              <div id="progress-bar" class="progress-bar">
-                <div id="progress-fill-mask" class="progress-fill-mask"></div>
+        <div class="player">
+          <div class="player-row">
+            <div class="controls-group">
+              <button id="skip-back" class="circle-btn" aria-label="Skip Backward 15s">⏪</button>
+              <button id="play-btn" class="circle-btn play-btn" aria-label="Play">▶</button>
+              <button id="skip-forward" class="circle-btn" aria-label="Skip Forward 15s">⏩</button>
+            </div>
+
+            <div class="progress-stack-row">
+              <div class="progress-wrapper">
+                <div class="heatmap-overlay"></div>
+                <div id="progress-container"
+                     class="progress-container"
+                     data-duration="{{ duration_secs }}"
+                     data-epid="{{ comment_media_id }}">
+
+                  <div id="progress-bar" class="progress-bar">
+                    <div id="progress-fill-mask" class="progress-fill-mask"></div>
+                  </div>
+                  <div id="progress-dot" class="progress-dot"></div>
+                  <span id="progress-tooltip" class="progress-tooltip"></span>
+                </div>
               </div>
-              <div id="progress-dot" class="progress-dot"></div>
-              <span id="progress-tooltip" class="progress-tooltip"></span>
+
+              <div class="time-labels">
+                <span id="runtime-label">
+                  <span id="current-time">00:00</span> /
+                  <span id="total-time">{{ fmt_runtime or '1:40:00' }}</span>
+                </span>
+              </div>
             </div>
           </div>
+        </div>
+      </div> <!-- movie-main -->
+    </div> <!-- main-content-wrapper -->
 
-          <div class="time-labels">
-            <span id="runtime-label">
-              <span id="current-time">00:00</span> /
-              <span id="total-time">{{ fmt_runtime or '1:40:00' }}</span>
-            </span>
+    <!-- COMMENT SECTION -->
+    <section class="chat-wrapper">
+      <div class="comment-feed" id="comments-container">
+        <div class="comment-overlay" id="commentOverlay">
+          <button id="showCommentsBtn" class="show-comments-btn">Show Comments</button>
+        </div>
+        {% for comment in comments %}
+        <div class="comment-line" data-secs="{{ comment.timestamp }}">
+          <strong>{{ comment.user.username }}</strong>
+          <code>{{ "%02d:%02d:%02d"|format(comment.timestamp // 3600, (comment.timestamp % 3600) // 60, comment.timestamp % 60) }}</code>
+          {% if comment.content %}
+            <span class="chat-text">: {{ comment.content }}</span>
+          {% endif %}
+          {% if comment.gif_url %}
+            <div class="chat-gif-wrapper">
+              <img src="{{ comment.gif_url }}" alt="GIF" class="comment-gif">
+            </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if current_user.is_authenticated %}
+      <form method="POST" class="chat-input-form">
+        {{ form.hidden_tag() }}
+        <div class="comment-toolbar-row">
+          <div class="text-field comment-with-gif">
+            {{ form.content(rows=1, cols=40) }}
+            {% include 'gif_comment.html' %}
           </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- COMMENT SECTION -->
-  <section class="chat-wrapper">
-    <div class="comment-feed" id="comments-container">
-      <div class="comment-overlay" id="commentOverlay">
-        <button id="showCommentsBtn" class="show-comments-btn">Show Comments</button>
-      </div>
-      {% for comment in comments %}
-      <div class="comment-line" data-secs="{{ comment.timestamp }}">
-        <strong>{{ comment.user.username }}</strong>
-        <code>{{ "%02d:%02d:%02d"|format(comment.timestamp // 3600, (comment.timestamp % 3600) // 60, comment.timestamp % 60) }}</code>
-        {% if comment.content %}
-          <span class="chat-text">: {{ comment.content }}</span>
-        {% endif %}
-        {% if comment.gif_url %}
-          <div class="chat-gif-wrapper">
-            <img src="{{ comment.gif_url }}" alt="GIF" class="comment-gif">
+          <div class="timestamp-inline">
+            {{ form.timestamp(size=8, placeholder="00:00:00") }}
           </div>
-        {% endif %}
-      </div>
-      {% endfor %}
-    </div>
-
-    {% if current_user.is_authenticated %}
-    <form method="POST" class="chat-input-form">
-      {{ form.hidden_tag() }}
-      <div class="comment-toolbar-row">
-        <div class="text-field comment-with-gif">
-          {{ form.content(rows=1, cols=40) }}
-          {% include 'gif_comment.html' %}
+          {{ form.submit(class_='comment-submit') }}
         </div>
-        <div class="timestamp-inline">
-          {{ form.timestamp(size=8, placeholder="00:00:00") }}
-        </div>
-        {{ form.submit(class_='comment-submit') }}
-      </div>
-    </form>
-    {% else %}
-    <p><a href="{{ url_for('login') }}">Log in</a> to leave a comment.</p>
-    {% endif %}
-  </section>
-
-</div>
+      </form>
+      {% else %}
+      <p><a href="{{ url_for('login') }}">Log in</a> to leave a comment.</p>
+      {% endif %}
+    </section>
+  </div> <!-- Container -->
+</main>
 {% endblock content %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='scripts/progress_bar.js') }}"></script>
 <script src="{{ url_for('static', filename='scripts/gif_popup.js') }}"></script>
 <script src="{{ url_for('static', filename='scripts/comments.js') }}"></script>
+<script src="{{ url_for('static', filename='scripts/favorites.js') }}"></script>
 {% endblock scripts %}
