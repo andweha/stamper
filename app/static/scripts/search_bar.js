@@ -61,7 +61,7 @@ function renderResults(list, q) {
         </li>
     `).join('');
     openDropdown();
-  }
+}
 
 function setActive(index) {
   const options = [...resultsEl.querySelectorAll('li[role="option"]')];
@@ -160,6 +160,7 @@ document.addEventListener('click', (e) => {
 // ---- network --------------------------------------------------
 
 const doSearch = debounce(async (q) => {
+    console.log("Searching for:", q); // <--- Add this
     if (controller) controller.abort();
     controller = new AbortController();
   
