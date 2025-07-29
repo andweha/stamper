@@ -47,7 +47,20 @@
                                     <code class="comment-timestamp">
                                         {{ "%02d:%02d:%02d"|format(comment.timestamp // 3600, (comment.timestamp % 3600) // 60, comment.timestamp % 60) }}
                                     </code>
-                                    on <strong>{{ comment.media_title }}</strong>:
+                                    on 
+                                    {% if "S:" in comment.media_title %}
+                                        <a href="{{ url_for('view_episode', episode_id=comment.episode_id) }}">
+                                            <strong>{{ comment.media_title }}:</strong>
+                                        </a>:
+                                    {% elif comment.media_title and comment.media_title.endswith(".mp4") %}
+                                        <a href="{{ url_for('view_anime_episode', episode_id=comment.episode_id) }}">
+                                            <strong>{{ comment.media_title }}:</strong>
+                                        </a>:
+                                    {% else %}
+                                        <a href="{{ url_for('view_movie', movie_id=comment.episode_id) }}">
+                                            <strong>{{ comment.media_title }}:</strong>
+                                        </a>
+                                    {% endif %}
                                     <span class="comment-snippet">{{ comment.content[:80] }}{% if comment.content|length > 80 %}...{% endif %}</span>
                                 </div>
 
@@ -61,7 +74,7 @@
                 {% else %}
                     <p class="no-comments-msg">No comments yet. Start sharing your thoughts!</p>
                 {% endif %}
-                </section>
+            </section>
         </div>
     </div>
 </main>

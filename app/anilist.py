@@ -105,7 +105,6 @@ def parse_anime(anime_raw):
             "title_romaji": anime["title"]["romaji"],
             "title_english": anime["title"]["english"],
             "episodes": anime["episodes"],
-            #"duration": anime["duration"],
             "average_score": f"{anime['averageScore'] / 10:.1f}" if anime["averageScore"] is not None else None,
             "trending": anime["trending"],
             "genres": ", ".join(anime["genres"]),
