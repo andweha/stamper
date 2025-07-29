@@ -62,7 +62,7 @@
         <div class="featured-grid">
             {% for anime_show in anime %}
             <a href="{{ url_for('view_anime', anime_id=anime_show.anilist_id) }}" class="media-link">
-                <img src="{{ anime_show.cover_url }}" alt="{{ anime_show.title_romaji }}">
+                <img src="{{ anime_show.cover_url }}" alt="{{ anime_show.title_romaji }}" style="width: 100%; height: 100%; object-fit: cover;">
                 <div class="media-overlay">
                     <h3 class="overlay-title">{{ anime_show.title_english or anime_show.title_romaji }}</h3>
                     <p class="overlay-description">{{ (anime_show.description or '')[:100] }}{% if anime_show.description and anime_show.description|length > 100 %}...{% endif %}</p>
