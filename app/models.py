@@ -10,7 +10,6 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
-    profile_pic_url = db.Column(db.String(200), nullable=True, default=None)
 
     total_movie_seconds = db.Column(db.Integer, default=0, nullable=False)
     total_show_seconds = db.Column(db.Integer, default=0, nullable=False)

@@ -645,7 +645,6 @@ def update_watch_time():
 
     except Exception as e:
         db.session.rollback()
-        # In production, you'd log the error instead of printing
         print(f"Error updating watch time: {e}") 
         return jsonify(success=False, message="Internal server error"), 500
 
@@ -678,7 +677,7 @@ def update_watch_time_beacon():
             return '', 400
 
         db.session.commit()
-        return '', 204 # No Content, standard for sendBeacon success
+        return '', 204
 
     except Exception as e:
         db.session.rollback()
