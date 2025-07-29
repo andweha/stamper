@@ -2,6 +2,13 @@
 {% block content %}
 <main class="main-container">
   <div class="Container">
+    <button class="star-button" data-show-id="{{media_id}}">
+      {% if media_id in user_favorites %}
+        ⭐
+      {% else %}
+        ☆
+      {% endif %}
+    </button>
     {% if anime %}
     <div class="Details">
       <div class="title-poster">
@@ -36,3 +43,6 @@
   </div>
 </main>
 {% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='scripts/favorites.js') }}"></script>
+{% endblock scripts %}

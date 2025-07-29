@@ -1,202 +1,207 @@
- /* use episode ID so each episode remembers its own spot */
- document.addEventListener('DOMContentLoaded', () => {
-    /* grab elements */
-    const bar      = document.getElementById('progress-container');
-    const barFill  = document.getElementById('progress-bar');
-    const tooltip  = document.getElementById('progress-tooltip');
-    const playBtn  = document.getElementById('play-btn');
-    const tsInput  = document.getElementById('timestamp');
-    const comments = document.getElementById('comments-container');
-    const toggle   = document.getElementById('toggle-comments');
-    if (!bar) return;
-  
-    const mediaType = bar.dataset.mediaType; 
-    const mediaId = bar.dataset.mediaId; 
+document.addEventListener('DOMContentLoaded', () => {
+  const bar = document.getElementById('progress-container');
+  const barFill = document.getElementById('progress-bar');
+  const tooltip = document.getElementById('progress-tooltip');
+  const heatmapOverlay = document.querySelector('.heatmap-overlay');
+  const playBtn = document.getElementById('play-btn');
+  const tsInput = document.querySelector('input[name="timestamp"]');
+  const showBtn = document.getElementById('showCommentsBtn');
+  const dot = document.getElementById('progress-dot');
+  const currentTimeDisplay = document.getElementById('current-time');
+  const totalTimeDisplay = document.getElementById('total-time');
+  const skipBackBtn = document.getElementById('skip-back');
+  const skipForwardBtn = document.getElementById('skip-forward');
+  const comments = document.getElementById('comments-container');
 
+  if (!bar || !barFill) return;
 
-    /* unique storage key for THIS episode */
-    // This key is for storing progress bar time elapsed in local storage based; This creates a specific key to a specific episode/ movie
-    const STORAGE_KEY = `episode:${bar.dataset.epid}:${location.pathname}`;
-  
-    /* helpers */
-    const duration = Number(bar.dataset.duration) || 0; // this pulls from progress container's displayed number
+  const duration = Number(bar.dataset.duration) || 0;
+  const mediaId = bar.dataset.epid;
+  const mediaType = bar.dataset.mediaType;
+  const STORAGE_KEY = `episode:${mediaId}:${location.pathname}`;
 
+  let elapsed = Number(localStorage.getItem(STORAGE_KEY)) || 0;
+  let timerId = null;
+  let playing = false;
+  let watchedTimeThisSession = 0;
+  const WATCH_TIME_UPDATE_INTERVAL = 10;
 
+  const fmt = (s) => {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = Math.floor(s % 60);
+    return h > 0
+      ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+      : `${m}:${String(sec).padStart(2, '0')}`;
+  };
 
-    /*
-    This function create the timestamp display
-    */
-    const fmt = s => {
-      s = Math.round(s);
-      const h = String(Math.floor(s/3600)).padStart(2,'0');
-      const m = String(Math.floor((s%3600)/60)).padStart(2,'0');
-      const c = String(s%60).padStart(2,'0');
-      return `${h}:${m}:${c}`;
+  function updateVisibleComments() {
+    document.querySelectorAll('.comment-line').forEach(comment => {
+      const time = Number(comment.dataset.secs);
+      comment.style.display = (!isNaN(time) && time <= elapsed) ? 'block' : 'none';
+    });
+  }
+
+  function render() {
+    const pct = elapsed / duration;
+    const mask = `linear-gradient(to right, white ${pct * 100}%, transparent ${pct * 100}%)`;
+    barFill.style.maskImage = mask;
+    barFill.style.webkitMaskImage = mask;
+
+    if (dot) dot.style.left = `${pct * 100}%`;
+    if (tooltip) {
+      tooltip.textContent = fmt(elapsed);
+      tooltip.style.left = `${pct * bar.clientWidth}px`;
+      tooltip.style.display = playing ? 'block' : tooltip.style.display;
+    }
+
+    if (tsInput) tsInput.value = fmt(elapsed);
+    if (currentTimeDisplay) currentTimeDisplay.textContent = fmt(elapsed);
+    if (totalTimeDisplay) totalTimeDisplay.textContent = fmt(duration);
+
+    updateVisibleComments();
+    localStorage.setItem(STORAGE_KEY, elapsed);
+    playBtn.textContent = playing ? '❚❚' : '▶';
+  }
+
+  function tick() {
+    elapsed += 1;
+    watchedTimeThisSession += 1;
+
+    if (watchedTimeThisSession >= WATCH_TIME_UPDATE_INTERVAL) {
+      sendWatchTimeToServer(watchedTimeThisSession);
+      watchedTimeThisSession = 0;
+    }
+
+    if (elapsed >= duration) {
+      elapsed = duration;
+      clearInterval(timerId);
+      playing = false;
+      localStorage.removeItem(STORAGE_KEY);
+      if (watchedTimeThisSession > 0) {
+        sendWatchTimeToServer(watchedTimeThisSession);
+        watchedTimeThisSession = 0;
+      }
+    }
+
+    render();
+  }
+
+  function sendWatchTimeToServer(seconds) {
+    if (!mediaType || !mediaId || seconds <= 0 || !Number.isFinite(seconds)) {
+      console.warn("Cannot send watch time: invalid input.", { mediaType, mediaId, seconds });
+      return;
+    }
+
+    const payload = {
+      watched_seconds: seconds,
+      media_type: mediaType,
+      media_id: mediaId
     };
-  
-    /* state (pick up saved value) */
-    let playing = false; //bool
-    let elapsed = Number(localStorage.getItem(STORAGE_KEY)) || 0; // pull elapsed time from local storage, else 0
-    let timerId = null;
 
-    let watchedTimeThisSession = 0;
-    const WATCH_TIME_UPDATE_INTERVAL = 10;
-  
-    /* comment‑reveal helper */
-    function updateComments()  {
-      document.querySelectorAll('.comment').forEach(el => {
-        el.style.display = (+el.dataset.secs <= elapsed) ? '' : 'none';
-      });
+    if (navigator.sendBeacon) {
+      const formData = new FormData();
+      for (const key in payload) formData.append(key, payload[key]);
+      navigator.sendBeacon('/update_watch_time_beacon', formData);
+    } else {
+      fetch('/update_watch_time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true
+      }).catch(err => console.error('Error sending watch time:', err));
     }
-  
-    /* render everything */
-    function render() {
-      const pct = elapsed / duration; //progress percentage
-      barFill.style.width = `${Math.min(pct*100,100)}%`; //set the width based on the percentage
-  
-      const px = pct * bar.clientWidth; //the amount of pixels based on client width * percentage
-      tooltip.style.left    = `${px}px`; //css style
-      tooltip.textContent   = fmt(elapsed); //the text of the time stamp
-      tooltip.style.display = playing ? 'block' : tooltip.style.display; //show based on playing bool
-  
-      playBtn.textContent = playing ? '❚❚' : '▶';
-      if (tsInput) tsInput.value = fmt(elapsed);
-  
-      updateComments();
-      localStorage.setItem(STORAGE_KEY, elapsed);      // <- save here
-    }
-  
-    /* tick every second */
-    function tick() {
-      elapsed += 1;
-      watchedTimeThisSession += 1; // Accumulate watch time
-        if (watchedTimeThisSession >= WATCH_TIME_UPDATE_INTERVAL) {
-            sendWatchTimeToServer(watchedTimeThisSession);
-            watchedTimeThisSession = 0;
-        }
+  }
 
-      if (elapsed >= duration) { //once the media has be watched completed
-        elapsed = duration;
-        clearInterval(timerId);
-        playing = false;
-        localStorage.removeItem(STORAGE_KEY);    // clear the key from local storage
-        if (watchedTimeThisSession > 0) {
-            endWatchTimeToServer(watchedTimeThisSession);
-            watchedTimeThisSession = 0;
-        }
+  playBtn?.addEventListener('click', () => {
+    playing = !playing;
+    if (playing) {
+      timerId = setInterval(tick, 1000);
+    } else {
+      clearInterval(timerId);
+      if (watchedTimeThisSession > 0) {
+        sendWatchTimeToServer(watchedTimeThisSession);
+        watchedTimeThisSession = 0;
       }
-      render();
     }
-  
-    /* play / pause */
-    playBtn.addEventListener('click', () => {
-      playing = !playing; // set false
-      if (playing) {
-        timerId = setInterval(tick, 1000); //update every second
-      } else {
-        clearInterval(timerId);
-        if (watchedTimeThisSession > 0) {
-            sendWatchTimeToServer(watchedTimeThisSession);
-            watchedTimeThisSession = 0;
-        }
-      }
-      render(); //display the new state of the progress 
-    });
-  
-    /* === bar hover tooltip (only when NOT playing) === */
-    bar.addEventListener('mousemove', e => {
-      if (playing) return;                  // let auto‑mode handle it
-      const rect = bar.getBoundingClientRect();
-      const pct  = (e.clientX - rect.left) / rect.width;
-      tooltip.style.left    = `${e.clientX - rect.left}px`;
-      tooltip.textContent   = fmt(pct * duration);
-      tooltip.style.display = 'block';
-    });
-    
-
-    bar.addEventListener('mouseleave', () => {
-      if (!playing) tooltip.style.display = 'none';
-    }); //take off fmt display
-  
-    /* === click (seek) === 
-    update the progress bar based on click on the progress bar
-    
-    */
-    bar.addEventListener('click', e => {
-      const rect = bar.getBoundingClientRect();
-      const pct  = (e.clientX - rect.left) / rect.width;
-
-      elapsed = pct * duration;
-      render();
-      
-      if (playing) {
-          clearInterval(timerId);
-          timerId = setInterval(tick, 1000);
-      }
-    });
-  
-    /* === show / hide comments === */
-    if (toggle && comments) {
-      toggle.addEventListener('click', () => {
-        comments.classList.toggle('hidden');
-        toggle.textContent = comments.classList.contains('hidden')
-                             ? 'Show Comments' : 'Hide Comments';
-      });
-    }
-
-    function sendWatchTimeToServer(seconds) {
-        if (!mediaType || !mediaId || seconds <= 0 || !Number.isFinite(seconds)) {
-            console.warn("Cannot send watch time: Missing media type, ID, or invalid seconds.", { mediaType, mediaId, seconds });
-            return;
-        }
-
-        const payload = {
-            watched_seconds: seconds,
-            media_type: mediaType,
-            media_id: mediaId
-        };
-
-        if (navigator.sendBeacon) {
-            const formData = new FormData();
-            for (const key in payload) {
-                formData.append(key, payload[key]);
-            }
-            navigator.sendBeacon('/update_watch_time_beacon', formData);
-            console.log(`Beacon sent ${seconds.toFixed(2)}s for ${mediaType} ${mediaId}`);
-        } else {
-            fetch('/update_watch_time', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
-                keepalive: true 
-            })
-            .then(response => {
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("application/json") !== -1) {
-                    return response.json();
-                } else {
-                    return response.text().then(text => { throw new Error(text || "Non-JSON response"); });
-                }
-            })
-            .then(data => {
-                if (data && !data.success) { 
-                    console.error('Failed to update watch time:', data.message);
-                } else {
-                    console.log(`Fetch sent ${seconds.toFixed(2)}s for ${mediaType} ${mediaId}. Server response:`, data ? data.message : "No specific message.");
-                }
-            })
-            .catch(error => console.error('Error sending watch time:', error));
-        }
-    }
-
-    window.addEventListener('beforeunload', () => {
-        if (watchedTimeThisSession > 0) {
-            sendWatchTimeToServer(watchedTimeThisSession);
-        }
-    });
-  
-  
-    render();               // initial paint with restored time
+    render();
   });
+
+  skipBackBtn?.addEventListener('click', () => {
+    elapsed = Math.max(elapsed - 15, 0);
+    render();
+  });
+
+  skipForwardBtn?.addEventListener('click', () => {
+    elapsed = Math.min(elapsed + 15, duration);
+    render();
+  });
+
+  bar.addEventListener('mousemove', (e) => {
+    if (playing) return;
+    const rect = bar.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    tooltip.style.left = `${e.clientX - rect.left}px`;
+    tooltip.textContent = fmt(pct * duration);
+    tooltip.style.display = 'block';
+  });
+
+  bar.addEventListener('mouseleave', () => {
+    if (!playing) tooltip.style.display = 'none';
+  });
+
+  bar.addEventListener('click', (e) => {
+    const rect = bar.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    elapsed = pct * duration;
+    render();
+    if (playing) {
+      clearInterval(timerId);
+      timerId = setInterval(tick, 1000);
+    }
+  });
+
+  showBtn?.addEventListener('click', () => {
+    updateVisibleComments();
+    const overlay = document.getElementById('commentOverlay');
+    overlay?.classList.add('hidden');
+  });
+
+  window.addEventListener('beforeunload', () => {
+    if (watchedTimeThisSession > 0) {
+      sendWatchTimeToServer(watchedTimeThisSession);
+    }
+  });
+
+  // HEATMAP
+  fetch(`/api/comments/${mediaId}`)
+    .then(res => res.json())
+    .then(timestamps => {
+      const secondsPerBucket = 30;
+      const bucketCount = Math.min(200, Math.max(10, Math.floor(duration / secondsPerBucket)));
+      const bucketSize = duration / bucketCount;
+      const density = new Array(bucketCount).fill(0);
+
+      timestamps.forEach(ts => {
+        const i = Math.floor(ts / bucketSize);
+        if (i < bucketCount) density[i]++;
+      });
+
+      const max = Math.max(...density, 1);
+      const getGrayscale = norm => `hsl(0, 0%, ${90 - norm * 60}%)`;
+      const getColor = norm => `hsl(250, 80%, ${85 - norm * 60}%)`;
+
+      const stopsGray = density.map((count, i) =>
+        `${getGrayscale(count / max)} ${(i / bucketCount) * 100}%`);
+      const stopsColor = density.map((count, i) =>
+        `${getColor(count / max)} ${(i / bucketCount) * 100}%`);
+
+      if (heatmapOverlay) {
+        heatmapOverlay.style.background = `linear-gradient(to right, ${stopsGray.join(', ')})`;
+      }
+      barFill.style.background = `linear-gradient(to right, ${stopsColor.join(', ')})`;
+    })
+    .catch(err => console.error("Failed to load heatmap data:", err));
+
+  render();
+});

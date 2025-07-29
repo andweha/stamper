@@ -169,7 +169,7 @@ def get_media(media_id):
             seasons.append(season_dict)
 
         conn.close()
-    return render_template("season_page.html", item=media, seasons=seasons)
+    return render_template("season_page.html", item=media, seasons=seasons,media_type="tv",media_id=media["tmdb_id"])
 
 
 # for movies
@@ -245,8 +245,10 @@ def view_movie(movie_id):
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
+        comment_media_id=movie["tmdb_id"],
         user_favorites=user_favorites,
     )
+    
 
 
 # for shows
@@ -293,15 +295,17 @@ def view_episode(episode_id):
 
     comment_block = get_comments(episode_id)
     emoji_summary = summarize_comments(comment_block) if comment_block else ""
-
+    
     return render_template(
         "media_page.html",
         media=episode,
-        media_type="episode",
+        media_type="tv",
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
+        comment_media_id=episode["episode_id"],
     )
+
 
 # anime
 @app.route("/anime/<int:anime_id>")
@@ -330,11 +334,11 @@ def view_anime(anime_id):
     episodes = [dict(zip(ep_columns, row)) for row in ep_cursor.fetchall()]
 
     conn.close()
-
+    user_favorites = get_user_favorites()  # Add this line
     # get episode nums
     episodes.sort(key=lambda x: extract_ep_num(x.get('episode_title')), reverse=False)
 
-    return render_template("anime_page.html", anime=anime, episodes=episodes)
+    return render_template("anime_page.html", anime=anime, episodes=episodes,user_favorites=user_favorites,media_type="anime",media_id=anime["anilist_id"],)
 
 # anime details
 @app.route("/aniepisode/<int:episode_id>", methods=["GET", "POST"])
@@ -388,7 +392,7 @@ def view_anime_episode(episode_id):
 
     comment_block = get_comments(episode_id)
     emoji_summary = summarize_comments(comment_block) if comment_block else ""
-
+    user_favorites = get_user_favorites()  # Add this line
     return render_template(
         "media_page.html",
         media=episode,
@@ -397,6 +401,7 @@ def view_anime_episode(episode_id):
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
+        user_favorites=user_favorites
     )
 def get_user_favorites():
     if current_user.is_authenticated:
@@ -446,8 +451,18 @@ def favorites():
     cursor.execute(query, media_ids)
     shows = cursor.fetchall()
 
+    placeholders = ",".join(["?"] * len(media_ids))  # e.g., "?, ?, ?"
+    query = f"SELECT *, 'anime' as media_type FROM anime WHERE anilist_id IN ({placeholders})"
+    cursor.execute(query, media_ids)
+    anime = cursor.fetchall()
+    
+
+    user_favorites = get_user_favorites()  # Add this line
+    user_favorites=user_favorites
+    
+    shows.extend(anime)
     conn.close()
-    return render_template("Favorited.html", shows=shows)
+    return render_template("Favorited.html", shows=shows,user_favorites=user_favorites)
 
 
 
@@ -465,6 +480,12 @@ def delete_comment(comment_id):
     flash("Comment deleted.", "success")
     return redirect(request.referrer or url_for("catalogue"))
 
+@app.route("/api/comments/<int:media_id>")
+def get_comment_timestamps(media_id):
+    comments = Comment.query.filter_by(episode_id =media_id).all()
+    timestamps = [c.timestamp for c in comments]
+    return jsonify(timestamps)
+
 @app.route("/search_gifs")
 def search_gifs():
     query = request.args.get("q")
@@ -479,37 +500,37 @@ def search_gifs():
 @app.route("/api/search")
 def api_search():
     q = request.args.get("q", "").strip()
-    limit = min(int(request.args.get("limit", 10)), 50)
+    limit = min(int(request.args.get("limit", 5)), 50)
 
     if not q:
         return jsonify([])
 
-    conn = sqlite3.connect(MEDIA_DB_PATH)
-    cursor = conn.execute(
-        """
-        SELECT tmdb_id, title, overview, media_type, poster_url
-        FROM media 
-        WHERE title LIKE ? 
-        ORDER BY title ASC 
-        LIMIT ?
-        """,
-        (f"%{q}%", limit)
-    )
-    results = cursor.fetchall()
-    conn.close()
+    # conn = sqlite3.connect(MEDIA_DB_PATH)
+    # cursor = conn.execute(
+    #     """
+    #     SELECT tmdb_id, title, overview, media_type, poster_url
+    #     FROM media 
+    #     WHERE title LIKE ? 
+    #     ORDER BY title ASC 
+    #     LIMIT ?
+    #     """,
+    #     (f"%{q}%", limit)
+    # )
+    # results = cursor.fetchall()
+    # conn.close()
 
-    if results:
-        # Format DB results
-        return jsonify([
-            {
-                "id": row[0],
-                "title": row[1],
-                "description": row[2] or "",
-                "media_type": row[3],
-                "poster_url": row[4] or ""
-            }
-            for row in results
-        ])
+    # if results:
+    #     # Format DB results
+    #     return jsonify([
+    #         {
+    #             "id": row[0],
+    #             "title": row[1],
+    #             "description": row[2] or "",
+    #             "media_type": row[3],
+    #             "poster_url": row[4] or ""
+    #         }
+    #         for row in results
+    #     ])
 
     # Step 2: Fallback to TMDB if no local matches
     TMDB_API_KEY = os.getenv("TMDB_API_KEY")
