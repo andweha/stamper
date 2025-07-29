@@ -9,11 +9,14 @@ h1 {
   color: white
 }
 
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+}
+
+
 img {
   width: 80%; 
-  max-width: 300px;
   border-radius: 8px;
-  margin: 20px 0;
   text-align: center;
 }
 

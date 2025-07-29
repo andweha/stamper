@@ -11,19 +11,20 @@
 .section-header {
   font-size: 1.5rem;
   font-weight: 600;
-  margin: 2rem 0 .75rem;
+  margin: 1rem 0 .75rem;
   color: #f5f5f7;
 }
 
-.media-section {
+.media-container {
   margin-bottom: 3rem;
   padding: 0 1rem;
+  background-color: #2a2a3d;
 }
 
 .movie-scroll {
   padding-top: 0.3rem;
   display: flex;
-  gap: 1rem;
+  gap: 2rem;
   overflow-x: auto;
   overflow-y: visible;
   padding-bottom: 0.5rem;
@@ -42,46 +43,29 @@
   );
   scroll-snap-align: start;
   position: relative;
-  overflow: visible;
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+  height: 500px; /* Set fixed height to contain everything */
+  margin: 20px;
 }
 
 .movie-card img {
-  width: 100%;
+  width: 100%; /* Fill the calculated width */
+  height: 100%; /* Fill the fixed height */
   object-fit: cover;
-  margin-top: 0;
+  margin: 0;
+  display: block;
+  transition: filter 0.3s ease;
 }
 
 .movie-card:hover {
-  transform: translateY(-5px);
+  transform: scale(1.05);
 }
 
-.rank-badge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  background-color: #ff4757;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: bold;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-
-.movie-card:hover .rank-badge {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.media-title {
-  padding: 0.5rem;
-  margin-bottom: 15px;
-  font-weight: 500;
-  font-size: 1.25rem;
-  color: #f5f5f7;
-  text-decoration: none;
+.movie-card:hover img {
+  filter: blur(3px);
 }
 
 /* Featured TV Shows Grid */
@@ -120,8 +104,95 @@
   gap: 1rem;
 }
 
-.movie-card {
-  flex: 0 0 calc(
-    (100% - (var(--featured-grid-columns) - 2) * 1rem) / (var(--featured-grid-columns) - 1)
-  );
+/* Media card hover overlay styles */
+.movie-card, .media-link {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+
+.movie-card:hover, .media-link:hover {
+  transform: scale(1.05);
+}
+
+/* Overlay container */
+.media-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: left;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  text-align: left;
+  box-sizing: border-box;
+  gap: 20px;
+  /* No need to specify width/height - it inherits from the positioned parent */
+}
+
+.movie-card:hover .media-overlay,
+.media-link:hover .media-overlay {
+  opacity: 1;
+}
+
+/* Remove the duplicate/conflicting rules for .movie-card and .media-link */
+.media-link {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+
+.media-link:hover {
+  transform: scale(1.05);
+}
+
+/* Overlay content styles */
+.overlay-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 0; /* Remove line under title */
+  line-height: 1.2;
+  text-decoration: none; /* Remove any underline */
+}
+
+.overlay-description {
+  font-size: 0.85rem;
+  margin-bottom: 15px; /* Lower the description */
+  margin-top: 8px; /* Add space from title */
+  opacity: 0.9;
+  line-height: 1.3;
+}
+
+.overlay-rating {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  color: #ffd700;
+}
+
+.overlay-star {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #ffd700;
+  transition: transform 0.2s ease;
+  margin-top: auto; /* Push to bottom */
+  margin-bottom: 10px; /* Hang closer to lower middle */
+  height:fit-content;
+  width:fit-content;
+}
+
+.overlay-star:hover {
+  transform: scale(1.2);
 }

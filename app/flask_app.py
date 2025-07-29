@@ -37,9 +37,12 @@ from app.anilist import (
 from app.forms import RegistrationForm, LoginForm, commentForm
 from app.google_ai import get_comments, summarize_comments
 
-from app.models import Comment, User, db
+from app.models import Comment, User, db, History, Favorite
+
 from app.tenor import search_gif, featured_gifs
 from app.cache_tmdb import fetch_and_cache_movie, fetch_and_cache_show
+from app.history import add_to_history
+
 
 app = Flask(__name__)
 proxied = FlaskBehindProxy(app)
@@ -80,15 +83,39 @@ def parse_timestamp_string(ts_str):
     else:
         raise ValueError("Invalid timestamp format")
 
+# helper function for time conversion
+def seconds_to_hours_minutes(total_seconds):
+    if total_seconds is None:
+        return 0, 0
+    total_seconds = int(total_seconds)
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    return hours, minutes
 
 # Update TMDB to show to catalogue page
 @app.route("/")
 def catalogue():
     conn = sqlite3.connect(MEDIA_DB_PATH)
 
-    movie_query = "SELECT * FROM featured_movies ORDER BY rank ASC LIMIT 50"
-    tv_query = "SELECT * FROM featured_tv ORDER BY rank ASC LIMIT 10"
+    movie_query = """
+        SELECT fm.*, m.overview, m.vote_average, m.poster_url, m.title
+        FROM featured_movies fm
+        INNER JOIN media m ON fm.tmdb_id = m.tmdb_id
+        ORDER BY fm.rank ASC 
+        LIMIT 50
+    """
+    
+    tv_query = """
+        SELECT ftv.*, m.overview, m.vote_average, m.poster_url, m.title
+        FROM featured_tv ftv
+        INNER JOIN media m ON ftv.tmdb_id = m.tmdb_id
+        ORDER BY ftv.rank ASC 
+        LIMIT 10
+    """
+    
+    # Anime query remains the same since it already has description
     anime_query = "SELECT * FROM anime ORDER BY trending DESC LIMIT 10"
+
 
     def fetch_rows(conn, query):
         cursor = conn.execute(query)
@@ -98,12 +125,12 @@ def catalogue():
     movies = fetch_rows(conn, movie_query)
     tv_shows = fetch_rows(conn, tv_query)
     anime = fetch_rows(conn, anime_query)
-
+    user_favorites = get_user_favorites()  # Add this line
     conn.close()
 
     users = User.query.all()
     return render_template(
-        "catalogue.html", movies=movies, tv_shows=tv_shows, anime=anime, users=users
+        "catalogue.html", movies=movies, tv_shows=tv_shows, anime=anime, users=users, user_favorites=user_favorites
     )
 
 
@@ -128,6 +155,16 @@ def get_media(media_id):
 
     media = dict(zip([c[0] for c in cursor.description], row))
 
+    # history
+    if current_user.is_authenticated and media["media_type"] == "tv":
+        add_to_history(
+            user_id=current_user.id,
+            media_type="tv",
+            media_id=media["tmdb_id"],
+            title=media["title"],
+            poster_url=media.get("poster_url")
+        )
+
     # gets seasons
     seasons = []
     if media["media_type"] == "tv":
@@ -148,7 +185,7 @@ def get_media(media_id):
             seasons.append(season_dict)
 
         conn.close()
-    return render_template("season_page.html", item=media, seasons=seasons)
+    return render_template("season_page.html", item=media, seasons=seasons,media_type="tv",media_id=media["tmdb_id"])
 
 
 # for movies
@@ -174,6 +211,16 @@ def view_movie(movie_id):
     movie = dict(zip([c[0] for c in cursor.description], row))
 
     conn.close()
+
+    # add to history
+    if current_user.is_authenticated:
+        add_to_history(
+            user_id=current_user.id,
+            media_type="movie",
+            media_id=movie["tmdb_id"],
+            title=movie["title"],
+            poster_url=movie.get("poster_url")
+        )
 
     # Allow commenting
     form = commentForm()
@@ -205,7 +252,8 @@ def view_movie(movie_id):
 
     comment_block = get_comments(movie_id)
     emoji_summary = summarize_comments(comment_block) if comment_block else ""
-
+    user_favorites = get_user_favorites()
+    
     return render_template(
         "media_page.html",
         media=movie,
@@ -213,7 +261,10 @@ def view_movie(movie_id):
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
+        comment_media_id=movie["tmdb_id"],
+        user_favorites=user_favorites,
     )
+    
 
 
 # for shows
@@ -260,15 +311,17 @@ def view_episode(episode_id):
 
     comment_block = get_comments(episode_id)
     emoji_summary = summarize_comments(comment_block) if comment_block else ""
-
+    
     return render_template(
         "media_page.html",
         media=episode,
-        media_type="episode",
+        media_type="tv",
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
+        comment_media_id=episode["episode_id"],
     )
+
 
 # anime
 @app.route("/anime/<int:anime_id>")
@@ -282,17 +335,26 @@ def view_anime(anime_id):
         abort(404)
     anime = dict(zip([c[0] for c in cursor.description], anime_row))
 
+    if current_user.is_authenticated:
+        add_to_history(
+            user_id=current_user.id,
+            media_type="anime",
+            media_id=anime["anilist_id"],
+            title=anime["title_english"],
+            poster_url=anime.get("cover_url")
+        )
+    
     episode_query = f"SELECT * FROM anime_ep WHERE anilist_id = {anime_id}"
     ep_cursor = conn.execute(episode_query)
     ep_columns = [col[0] for col in ep_cursor.description]
     episodes = [dict(zip(ep_columns, row)) for row in ep_cursor.fetchall()]
 
     conn.close()
-
+    user_favorites = get_user_favorites()  # Add this line
     # get episode nums
     episodes.sort(key=lambda x: extract_ep_num(x.get('episode_title')), reverse=False)
 
-    return render_template("anime_page.html", anime=anime, episodes=episodes)
+    return render_template("anime_page.html", anime=anime, episodes=episodes,user_favorites=user_favorites,media_type="anime",media_id=anime["anilist_id"],)
 
 # anime details
 @app.route("/aniepisode/<int:episode_id>", methods=["GET", "POST"])
@@ -346,7 +408,7 @@ def view_anime_episode(episode_id):
 
     comment_block = get_comments(episode_id)
     emoji_summary = summarize_comments(comment_block) if comment_block else ""
-
+    user_favorites = get_user_favorites()  # Add this line
     return render_template(
         "media_page.html",
         media=episode,
@@ -355,7 +417,69 @@ def view_anime_episode(episode_id):
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
+        user_favorites=user_favorites
     )
+def get_user_favorites():
+    if current_user.is_authenticated:
+        favorites = db.session.query(Favorite.media_id).filter(Favorite.user_id == current_user.id).all()
+        return [fav[0] for fav in favorites]
+    return []
+
+@app.route("/toggle_favorite/<int:media_id>", methods=["POST"])
+@login_required
+def toggle_favorite(media_id):
+    favorite = Favorite.query.filter_by(user_id=current_user.id, media_id=media_id).first()
+    if favorite:
+        db.session.delete(favorite)
+    else:
+        db.session.add(Favorite(user_id=current_user.id, media_id=media_id))
+    db.session.commit()
+    return '', 204
+
+
+@app.route("/favorites")
+@login_required
+def favorites():
+
+    # Step 1: Get the user's favorited show_ids from SQLAlchemy
+    favorite_ids = (
+        db.session.query(Favorite.media_id)
+        .filter(Favorite.user_id == current_user.id)
+        .all()
+    )
+    # favorite_ids is a list of tuples like [(1,), (2,), (5,)] — we need a flat list
+    media_ids = [id for (id,) in favorite_ids]
+
+    if not media_ids:
+        return render_template("Favorited.html", shows=[])
+
+    # Step 2: Open a raw SQLite connection to media.db
+    MEDIA_DB_PATH = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "media.db"
+    )
+    conn = sqlite3.connect(MEDIA_DB_PATH)
+    conn.row_factory = sqlite3.Row  # enables dict-like row access
+    cursor = conn.cursor()
+
+    # Step 3: Query for shows that match the IDs
+    placeholders = ",".join(["?"] * len(media_ids))  # e.g., "?, ?, ?"
+    query = f"SELECT * FROM media WHERE tmdb_id IN ({placeholders})"
+    cursor.execute(query, media_ids)
+    shows = cursor.fetchall()
+
+    placeholders = ",".join(["?"] * len(media_ids))  # e.g., "?, ?, ?"
+    query = f"SELECT *, 'anime' as media_type FROM anime WHERE anilist_id IN ({placeholders})"
+    cursor.execute(query, media_ids)
+    anime = cursor.fetchall()
+    
+
+    user_favorites = get_user_favorites()  # Add this line
+    user_favorites=user_favorites
+    
+    shows.extend(anime)
+    conn.close()
+    return render_template("Favorited.html", shows=shows,user_favorites=user_favorites)
+
 
 
 @app.route("/comment/<int:comment_id>/delete", methods=["POST"])
@@ -372,6 +496,12 @@ def delete_comment(comment_id):
     flash("Comment deleted.", "success")
     return redirect(request.referrer or url_for("catalogue"))
 
+@app.route("/api/comments/<int:media_id>")
+def get_comment_timestamps(media_id):
+    comments = Comment.query.filter_by(episode_id =media_id).all()
+    timestamps = [c.timestamp for c in comments]
+    return jsonify(timestamps)
+
 @app.route("/search_gifs")
 def search_gifs():
     query = request.args.get("q")
@@ -386,37 +516,37 @@ def search_gifs():
 @app.route("/api/search")
 def api_search():
     q = request.args.get("q", "").strip()
-    limit = min(int(request.args.get("limit", 10)), 50)
+    limit = min(int(request.args.get("limit", 5)), 50)
 
     if not q:
         return jsonify([])
 
-    conn = sqlite3.connect(MEDIA_DB_PATH)
-    cursor = conn.execute(
-        """
-        SELECT tmdb_id, title, overview, media_type, poster_url
-        FROM media 
-        WHERE title LIKE ? 
-        ORDER BY title ASC 
-        LIMIT ?
-        """,
-        (f"%{q}%", limit)
-    )
-    results = cursor.fetchall()
-    conn.close()
+    # conn = sqlite3.connect(MEDIA_DB_PATH)
+    # cursor = conn.execute(
+    #     """
+    #     SELECT tmdb_id, title, overview, media_type, poster_url
+    #     FROM media 
+    #     WHERE title LIKE ? 
+    #     ORDER BY title ASC 
+    #     LIMIT ?
+    #     """,
+    #     (f"%{q}%", limit)
+    # )
+    # results = cursor.fetchall()
+    # conn.close()
 
-    if results:
-        # Format DB results
-        return jsonify([
-            {
-                "id": row[0],
-                "title": row[1],
-                "description": row[2] or "",
-                "media_type": row[3],
-                "poster_url": row[4] or ""
-            }
-            for row in results
-        ])
+    # if results:
+    #     # Format DB results
+    #     return jsonify([
+    #         {
+    #             "id": row[0],
+    #             "title": row[1],
+    #             "description": row[2] or "",
+    #             "media_type": row[3],
+    #             "poster_url": row[4] or ""
+    #         }
+    #         for row in results
+    #     ])
 
     # Step 2: Fallback to TMDB if no local matches
     TMDB_API_KEY = os.getenv("TMDB_API_KEY")
@@ -451,6 +581,153 @@ def api_search():
         })
 
     return jsonify(formatted)
+
+# profile of user
+@app.route("/profile")
+@login_required
+def profile():
+    # get watch counts (from history as before)
+    movies_watched_count = db.session.query(History.media_id).filter(
+        History.user_id == current_user.id,
+        History.media_type == 'movie'
+    ).distinct().count()
+
+    shows_watched_count = db.session.query(History.media_id).filter(
+        History.user_id == current_user.id,
+        History.media_type == 'tv'
+    ).distinct().count()
+
+    anime_watched_count = db.session.query(History.media_id).filter(
+        History.user_id == current_user.id,
+        History.media_type == 'anime'
+    ).distinct().count()
+
+    # get time watched
+    total_movie_seconds = current_user.total_movie_seconds
+    total_show_seconds = current_user.total_show_seconds
+    total_anime_seconds = current_user.total_anime_seconds
+
+    total_movie_hours, total_movie_minutes = seconds_to_hours_minutes(total_movie_seconds)
+    total_show_hours, total_show_minutes = seconds_to_hours_minutes(total_show_seconds)
+    total_anime_hours, total_anime_minutes = seconds_to_hours_minutes(total_anime_seconds)
+
+    grand_total_seconds = total_movie_seconds + total_show_seconds + total_anime_seconds
+    grand_total_hours, grand_total_minutes = seconds_to_hours_minutes(grand_total_seconds)
+
+    # profile picture
+    default_profile_pic_url = url_for('static', filename='images/default_profile.jpg')
+
+    user_profile_pic_url = getattr(current_user, 'profile_pic_url', None)
+    if user_profile_pic_url:
+        profile_pic_to_display = user_profile_pic_url
+    else:
+        profile_pic_to_display = default_profile_pic_url
+
+    # Pass data to the template
+    return render_template(
+        'profile.html',
+        user=current_user,
+        profile_pic_url=profile_pic_to_display,
+        stats={
+            'movies_watched': movies_watched_count,
+            'shows_watched': shows_watched_count,
+            'anime_watched': anime_watched_count,
+
+            'total_movie_hours': total_movie_hours,
+            'total_movie_minutes': total_movie_minutes,
+            'total_show_hours': total_show_hours,
+            'total_show_minutes': total_show_minutes,
+            'total_anime_hours': total_anime_hours,
+            'total_anime_minutes': total_anime_minutes,
+            'total_watched_hours': grand_total_hours,
+            'total_watched_minutes': grand_total_minutes,
+        }
+    )
+
+@app.route('/update_watch_time', methods=['POST'])
+@login_required
+def update_watch_time():
+    data = request.get_json()
+
+    if not data:
+        return jsonify(success=False, message="No data provided"), 400
+
+    watched_seconds = data.get('watched_seconds')
+    media_type = data.get('media_type')
+
+    if not all([watched_seconds is not None, media_type]):
+        return jsonify(success=False, message="Missing data: watched_seconds or media_type"), 400
+
+    try:
+        watched_seconds = int(watched_seconds)
+        if watched_seconds < 0:
+            raise ValueError("Watched seconds cannot be negative.")
+    except (ValueError, TypeError):
+        return jsonify(success=False, message="Invalid watched_seconds format"), 400
+
+    user = current_user
+
+    try:
+        if media_type == 'movie':
+            user.total_movie_seconds += watched_seconds
+        elif media_type == 'tv':
+            user.total_show_seconds += watched_seconds
+        elif media_type == 'anime':
+            user.total_anime_seconds += watched_seconds
+        else:
+            return jsonify(success=False, message="Unknown media type"), 400
+        
+        db.session.commit()
+        return jsonify(success=True, message="Watch time updated"), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating watch time: {e}") 
+        return jsonify(success=False, message="Internal server error"), 500
+
+@app.route('/update_watch_time_beacon', methods=['POST'])
+@login_required
+def update_watch_time_beacon():
+    watched_seconds_str = request.form.get('watched_seconds')
+    media_type = request.form.get('media_type')
+
+    if not all([watched_seconds_str, media_type]):
+        return '', 400
+
+    try:
+        watched_seconds = int(float(watched_seconds_str))
+        if watched_seconds < 0:
+            raise ValueError("Watched seconds cannot be negative.")
+    except (ValueError, TypeError):
+        return '', 400
+
+    user = current_user
+
+    try:
+        if media_type == 'movie':
+            user.total_movie_seconds += watched_seconds
+        elif media_type == 'tv':
+            user.total_show_seconds += watched_seconds
+        elif media_type == 'anime':
+            user.total_anime_seconds += watched_seconds
+        else:
+            return '', 400
+
+        db.session.commit()
+        return '', 204
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating watch time via beacon: {e}")
+        return '', 500
+    
+
+# history for current user, order by recently watched
+@app.route("/history")
+@login_required
+def history():
+    user_history = History.query.filter_by(user_id=current_user.id).order_by(History.watched_at.desc()).all()
+    return render_template("history.html", user_history=user_history)
 
 
 @app.route("/register", methods=["GET", "POST"])

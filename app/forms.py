@@ -72,7 +72,7 @@ class commentForm(FlaskForm):
         ],
     )
     gif_url = HiddenField("GIF URL")
-    submit = SubmitField("Post Comment")
+    submit = SubmitField("Comment")
 
     # Overriding validation logic for entire comment form
     def validate(self, extra_validators=None):

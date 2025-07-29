@@ -52,11 +52,11 @@ function renderResults(list, q) {
     resultsEl.innerHTML = list.map((it, i) => `
         <li id="search-opt-${i}" role="option" aria-selected="${i === activeIndex}" class="search-result-item">
             <div class="search-content">
-            <div class="search-text">
+              ${it.poster_url ? `<img class="search-poster" src="${it.poster_url}" alt="${it.title}"/>` : ''}
+              <div class="search-text">
                 ${highlight(it.title ?? '', q)}
-                ${it.description ? `<small class="search-desc">${escapeHtml(it.description.slice(0, 60))}...</small>` : ''}
-            </div>
-            ${it.poster_url ? `<img class="search-poster" src="${it.poster_url}" alt="${it.title}"/>` : ''}
+                ${it.description ? `<small class="search-desc">${escapeHtml(it.description.slice(0, 100))}...</small>` : ''}
+              </div>
             </div>
         </li>
     `).join('');
