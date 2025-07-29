@@ -36,6 +36,32 @@
                     </div>
                 </div>
             </section>
+            <section class="recent-comments-section">
+                <h3 class="section-heading">💬 Recent Comments</h3>
+                {% if recent_comments %}
+                    <ul class="recent-comments-list">
+                    {% for comment in recent_comments %}
+                        <li class="recent-comment-item">
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div>
+                                    <code class="comment-timestamp">
+                                        {{ "%02d:%02d:%02d"|format(comment.timestamp // 3600, (comment.timestamp % 3600) // 60, comment.timestamp % 60) }}
+                                    </code>
+                                    on <strong>{{ comment.media_title }}</strong>:
+                                    <span class="comment-snippet">"{{ comment.content[:80] }}{% if comment.content|length > 80 %}...{% endif %}"</span>
+                                </div>
+
+                                {% if comment.gif_url %}
+                                    <img src="{{ comment.gif_url }}" alt="GIF" class="comment-gif" />
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="no-comments-msg">No comments yet. Start sharing your thoughts!</p>
+                {% endif %}
+                </section>
         </div>
     </div>
 </main>

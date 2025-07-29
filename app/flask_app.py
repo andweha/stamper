@@ -598,20 +598,29 @@ def profile():
     grand_total_seconds = total_movie_seconds + total_show_seconds + total_anime_seconds
     grand_total_hours, grand_total_minutes = seconds_to_hours_minutes(grand_total_seconds)
 
-    # profile picture
-    default_profile_pic_url = url_for('static', filename='images/default_profile.jpg')
+    recent_comments_query = (
+        db.session.query(Comment, History.title)
+        .join(History, Comment.episode_id == History.media_id)
+        .filter(Comment.user_id == current_user.id)
+        .order_by(Comment.created_at.desc())
+        .limit(5)
+    )
 
-    user_profile_pic_url = getattr(current_user, 'profile_pic_url', None)
-    if user_profile_pic_url:
-        profile_pic_to_display = user_profile_pic_url
-    else:
-        profile_pic_to_display = default_profile_pic_url
+    # Format for display
+    recent_comments = [
+        {
+            'content': comment.content,
+            'timestamp': comment.timestamp,
+            'media_title': title,
+            'gif_url': comment.gif_url
+        }
+        for comment, title in recent_comments_query
+    ]
 
     # Pass data to the template
     return render_template(
         'profile.html',
         user=current_user,
-        profile_pic_url=profile_pic_to_display,
         stats={
             'movies_watched': movies_watched_count,
             'shows_watched': shows_watched_count,
@@ -625,7 +634,8 @@ def profile():
             'total_anime_minutes': total_anime_minutes,
             'total_watched_hours': grand_total_hours,
             'total_watched_minutes': grand_total_minutes,
-        }
+        },
+        recent_comments=recent_comments
     )
 
 @app.route('/update_watch_time', methods=['POST'])

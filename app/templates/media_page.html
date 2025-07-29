@@ -31,9 +31,8 @@
 
         {% if media_type != 'anime_episode' and media.overview %}
         <p class="overview">{{ media.overview }}</p>
-        {% endif %}
-
         <p><strong>Rating:</strong> {{ media.vote_average }}</p>
+        {% endif %}
 
         {% if emoji_summary %}
         <p><strong>General Viewer Reaction:</strong> {{ emoji_summary }}</p>
@@ -62,7 +61,8 @@
             <div id="progress-container"
                 class="progress-container"
                 data-duration="{{ duration_secs }}"
-                data-epid="{{ comment_media_id }}">
+                data-epid="{{ comment_media_id }}"
+                data-media-type="{{ media_type }}">
 
               <div id="progress-bar" class="progress-bar">
                 <div id="progress-fill-mask" class="progress-fill-mask"></div>
