@@ -56,10 +56,11 @@ def create_media_db(
         tmdb_id INTEGER PRIMARY KEY,
         title TEXT,
         poster_url TEXT,
+        overview TEXT,
         rank INTEGER
     )
     """)
-    featured_movie_cols = ["tmdb_id", "title", "poster_url", "rank"]
+    featured_movie_cols = ["tmdb_id", "title", "poster_url", "overview", "rank"]
     featured_movie_rows = dicts_to_rows(featured_movies, featured_movie_cols)
     insert_many_rows(conn, "featured_movies", featured_movie_cols, featured_movie_rows)
 
@@ -69,10 +70,11 @@ def create_media_db(
         tmdb_id INTEGER PRIMARY KEY,
         title TEXT,
         poster_url TEXT,
+        overview TEXT,
         rank INTEGER
     )
     """)
-    featured_tv_cols = ["tmdb_id", "title", "poster_url", "rank"]
+    featured_tv_cols = ["tmdb_id", "title", "poster_url", "overview", "rank"]
     featured_tv_rows = dicts_to_rows(featured_tv, featured_tv_cols)
     insert_many_rows(conn, "featured_tv", featured_tv_cols, featured_tv_rows)
 

@@ -17,14 +17,16 @@
 
 .media-container {
   margin-bottom: 3rem;
-  padding: 0 1rem;
-  background-color: #2a2a3d;
+  padding: 1rem;
+  background-color: #141428;
+  border-radius: 8px;
+  box-shadow: 0 0 30px #9696bc; /* subtle glow */
 }
 
 .movie-scroll {
   padding-top: 0.3rem;
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
   overflow-x: auto;
   overflow-y: visible;
   padding-bottom: 0.5rem;
@@ -47,8 +49,6 @@
   overflow: hidden;
   border-radius: 8px;
   transition: transform 0.3s ease;
-  height: 500px; /* Set fixed height to contain everything */
-  margin: 20px;
 }
 
 .movie-card img {
