@@ -7,6 +7,9 @@
 
 .Details {
   width: 80%;
+  display: grid;
+  grid-auto-flow: column;
+  column-gap: 20px;
 }
 
 .Container {
@@ -125,6 +128,7 @@ li {
 
 .movie-poster {
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.5);
+  width: 300px;
 }
 
 .item-overview {
