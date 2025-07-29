@@ -83,6 +83,14 @@ def parse_timestamp_string(ts_str):
     else:
         raise ValueError("Invalid timestamp format")
 
+# helper function for time conversion
+def seconds_to_hours_minutes(total_seconds):
+    if total_seconds is None:
+        return 0, 0
+    total_seconds = int(total_seconds)
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    return hours, minutes
 
 # Update TMDB to show to catalogue page
 @app.route("/")
@@ -557,6 +565,146 @@ def api_search():
         })
 
     return jsonify(formatted)
+
+# profile of user
+@app.route("/profile")
+@login_required
+def profile():
+    # get watch counts (from history as before)
+    movies_watched_count = db.session.query(History.media_id).filter(
+        History.user_id == current_user.id,
+        History.media_type == 'movie'
+    ).distinct().count()
+
+    shows_watched_count = db.session.query(History.media_id).filter(
+        History.user_id == current_user.id,
+        History.media_type == 'tv'
+    ).distinct().count()
+
+    anime_watched_count = db.session.query(History.media_id).filter(
+        History.user_id == current_user.id,
+        History.media_type == 'anime'
+    ).distinct().count()
+
+    # get time watched
+    total_movie_seconds = current_user.total_movie_seconds
+    total_show_seconds = current_user.total_show_seconds
+    total_anime_seconds = current_user.total_anime_seconds
+
+    total_movie_hours, total_movie_minutes = seconds_to_hours_minutes(total_movie_seconds)
+    total_show_hours, total_show_minutes = seconds_to_hours_minutes(total_show_seconds)
+    total_anime_hours, total_anime_minutes = seconds_to_hours_minutes(total_anime_seconds)
+
+    grand_total_seconds = total_movie_seconds + total_show_seconds + total_anime_seconds
+    grand_total_hours, grand_total_minutes = seconds_to_hours_minutes(grand_total_seconds)
+
+    # profile picture
+    default_profile_pic_url = url_for('static', filename='images/default_profile.jpg')
+
+    user_profile_pic_url = getattr(current_user, 'profile_pic_url', None)
+    if user_profile_pic_url:
+        profile_pic_to_display = user_profile_pic_url
+    else:
+        profile_pic_to_display = default_profile_pic_url
+
+    # Pass data to the template
+    return render_template(
+        'profile.html',
+        user=current_user,
+        profile_pic_url=profile_pic_to_display,
+        stats={
+            'movies_watched': movies_watched_count,
+            'shows_watched': shows_watched_count,
+            'anime_watched': anime_watched_count,
+
+            'total_movie_hours': total_movie_hours,
+            'total_movie_minutes': total_movie_minutes,
+            'total_show_hours': total_show_hours,
+            'total_show_minutes': total_show_minutes,
+            'total_anime_hours': total_anime_hours,
+            'total_anime_minutes': total_anime_minutes,
+            'total_watched_hours': grand_total_hours,
+            'total_watched_minutes': grand_total_minutes,
+        }
+    )
+
+@app.route('/update_watch_time', methods=['POST'])
+@login_required
+def update_watch_time():
+    data = request.get_json()
+
+    if not data:
+        return jsonify(success=False, message="No data provided"), 400
+
+    watched_seconds = data.get('watched_seconds')
+    media_type = data.get('media_type')
+
+    if not all([watched_seconds is not None, media_type]):
+        return jsonify(success=False, message="Missing data: watched_seconds or media_type"), 400
+
+    try:
+        watched_seconds = int(watched_seconds)
+        if watched_seconds < 0:
+            raise ValueError("Watched seconds cannot be negative.")
+    except (ValueError, TypeError):
+        return jsonify(success=False, message="Invalid watched_seconds format"), 400
+
+    user = current_user
+
+    try:
+        if media_type == 'movie':
+            user.total_movie_seconds += watched_seconds
+        elif media_type == 'tv':
+            user.total_show_seconds += watched_seconds
+        elif media_type == 'anime':
+            user.total_anime_seconds += watched_seconds
+        else:
+            return jsonify(success=False, message="Unknown media type"), 400
+        
+        db.session.commit()
+        return jsonify(success=True, message="Watch time updated"), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating watch time: {e}") 
+        return jsonify(success=False, message="Internal server error"), 500
+
+@app.route('/update_watch_time_beacon', methods=['POST'])
+@login_required
+def update_watch_time_beacon():
+    watched_seconds_str = request.form.get('watched_seconds')
+    media_type = request.form.get('media_type')
+
+    if not all([watched_seconds_str, media_type]):
+        return '', 400
+
+    try:
+        watched_seconds = int(float(watched_seconds_str))
+        if watched_seconds < 0:
+            raise ValueError("Watched seconds cannot be negative.")
+    except (ValueError, TypeError):
+        return '', 400
+
+    user = current_user
+
+    try:
+        if media_type == 'movie':
+            user.total_movie_seconds += watched_seconds
+        elif media_type == 'tv':
+            user.total_show_seconds += watched_seconds
+        elif media_type == 'anime':
+            user.total_anime_seconds += watched_seconds
+        else:
+            return '', 400
+
+        db.session.commit()
+        return '', 204
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating watch time via beacon: {e}")
+        return '', 500
+    
 
 # history for current user, order by recently watched
 @app.route("/history")

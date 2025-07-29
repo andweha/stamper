@@ -40,7 +40,10 @@
 
 .poster-wrapper img {
   max-height: 300px;
-  max-width: 100%;
+  max-width: 300px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   border-radius: 12px;
   display: block;
   margin: 0;

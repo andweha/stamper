@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block title %}Profile Page{% endblock %}
+
+{% block content %}
+<main class="main-content" style="min-height: 100vh; width: calc(100vw - 220px); display: block;">
+    <div class="catalogue-wrapper">
+        <div class="profile-page-container">
+            <section class="profile-header-section">
+                <div class="profile-info-text">
+                    <h2 class="user-name">{{ user.username }}</h2>
+                </div>
+            </section>
+
+            <section class="watched-categories-section">
+                <div class="categories-grid">
+                    <div class="category-card">
+                        <p class="category-count">{{ stats.movies_watched }}</p>
+                        <h3 class="category-label">Movies</h3>
+                    </div>
+                    <div class="category-card">
+                        <p class="category-count">{{ stats.shows_watched }}</p>
+                        <h3 class="category-label">TV Shows</h3>
+                    </div>
+                    <div class="category-card">
+                        <p class="category-count">{{ stats.anime_watched }}</p>
+                        <h3 class="category-label">Anime Series</h3>
+                    </div>
+                    <div class="category-card">
+                        <p class="category-count">
+                            {{ stats.total_watched_hours }}h
+                            {% if stats.total_watched_minutes is not none %}
+                                <span class="watch-time-details">{{ stats.total_watched_minutes }}m</span>
+                            {% endif %}
+                        </p>
+                        <h3 class="category-label">Time Watched</h3>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+{% endblock %}

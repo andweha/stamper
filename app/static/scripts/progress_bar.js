@@ -11,27 +11,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const totalTimeDisplay = document.getElementById('total-time');
   const skipBackBtn = document.getElementById('skip-back');
   const skipForwardBtn = document.getElementById('skip-forward');
+  const comments = document.getElementById('comments-container');
 
   if (!bar || !barFill) return;
 
   const duration = Number(bar.dataset.duration) || 0;
   const mediaId = bar.dataset.epid;
+  const mediaType = bar.dataset.mediaType;
   const STORAGE_KEY = `episode:${mediaId}:${location.pathname}`;
 
   let elapsed = Number(localStorage.getItem(STORAGE_KEY)) || 0;
   let timerId = null;
   let playing = false;
+  let watchedTimeThisSession = 0;
+  const WATCH_TIME_UPDATE_INTERVAL = 10;
 
   const fmt = (s) => {
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
     const sec = Math.floor(s % 60);
-
-    if (h > 0) {
-      return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-    } else {
-      return `${m}:${String(sec).padStart(2, '0')}`;
-    }
+    return h > 0
+      ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+      : `${m}:${String(sec).padStart(2, '0')}`;
   };
 
   function updateVisibleComments() {
@@ -47,14 +48,12 @@ document.addEventListener('DOMContentLoaded', () => {
     barFill.style.maskImage = mask;
     barFill.style.webkitMaskImage = mask;
 
-    if (dot) {
-      dot.style.left = `${pct * 100}%`;
+    if (dot) dot.style.left = `${pct * 100}%`;
+    if (tooltip) {
+      tooltip.textContent = fmt(elapsed);
+      tooltip.style.left = `${pct * bar.clientWidth}px`;
+      tooltip.style.display = playing ? 'block' : tooltip.style.display;
     }
-
-    tooltip.style.left = `${pct * bar.clientWidth}px`;
-    tooltip.textContent = fmt(elapsed);
-    tooltip.style.display = playing ? 'block' : tooltip.style.display;
-    playBtn.textContent = playing ? '❚❚' : '▶';
 
     if (tsInput) tsInput.value = fmt(elapsed);
     if (currentTimeDisplay) currentTimeDisplay.textContent = fmt(elapsed);
@@ -62,17 +61,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateVisibleComments();
     localStorage.setItem(STORAGE_KEY, elapsed);
+    playBtn.textContent = playing ? '❚❚' : '▶';
   }
 
   function tick() {
     elapsed += 1;
+    watchedTimeThisSession += 1;
+
+    if (watchedTimeThisSession >= WATCH_TIME_UPDATE_INTERVAL) {
+      sendWatchTimeToServer(watchedTimeThisSession);
+      watchedTimeThisSession = 0;
+    }
+
     if (elapsed >= duration) {
       elapsed = duration;
       clearInterval(timerId);
       playing = false;
       localStorage.removeItem(STORAGE_KEY);
+      if (watchedTimeThisSession > 0) {
+        sendWatchTimeToServer(watchedTimeThisSession);
+        watchedTimeThisSession = 0;
+      }
     }
+
     render();
+  }
+
+  function sendWatchTimeToServer(seconds) {
+    if (!mediaType || !mediaId || seconds <= 0 || !Number.isFinite(seconds)) {
+      console.warn("Cannot send watch time: invalid input.", { mediaType, mediaId, seconds });
+      return;
+    }
+
+    const payload = {
+      watched_seconds: seconds,
+      media_type: mediaType,
+      media_id: mediaId
+    };
+
+    if (navigator.sendBeacon) {
+      const formData = new FormData();
+      for (const key in payload) formData.append(key, payload[key]);
+      navigator.sendBeacon('/update_watch_time_beacon', formData);
+    } else {
+      fetch('/update_watch_time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true
+      }).catch(err => console.error('Error sending watch time:', err));
+    }
   }
 
   playBtn?.addEventListener('click', () => {
@@ -81,6 +119,10 @@ document.addEventListener('DOMContentLoaded', () => {
       timerId = setInterval(tick, 1000);
     } else {
       clearInterval(timerId);
+      if (watchedTimeThisSession > 0) {
+        sendWatchTimeToServer(watchedTimeThisSession);
+        watchedTimeThisSession = 0;
+      }
     }
     render();
   });
@@ -99,13 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (playing) return;
     const rect = bar.getBoundingClientRect();
     const pct = (e.clientX - rect.left) / rect.width;
-    const tooltipX = e.clientX - rect.left;
-
-    tooltip.style.left = `${tooltipX}px`;
+    tooltip.style.left = `${e.clientX - rect.left}px`;
     tooltip.textContent = fmt(pct * duration);
     tooltip.style.display = 'block';
   });
-
 
   bar.addEventListener('mouseleave', () => {
     if (!playing) tooltip.style.display = 'none';
@@ -116,6 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const pct = (e.clientX - rect.left) / rect.width;
     elapsed = pct * duration;
     render();
+    if (playing) {
+      clearInterval(timerId);
+      timerId = setInterval(tick, 1000);
+    }
   });
 
   showBtn?.addEventListener('click', () => {
@@ -124,11 +167,16 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay?.classList.add('hidden');
   });
 
-  // === HEATMAP GENERATION ===
+  window.addEventListener('beforeunload', () => {
+    if (watchedTimeThisSession > 0) {
+      sendWatchTimeToServer(watchedTimeThisSession);
+    }
+  });
+
+  // HEATMAP
   fetch(`/api/comments/${mediaId}`)
     .then(res => res.json())
     .then(timestamps => {
-      // Aim for ~20–30s per bucket
       const secondsPerBucket = 30;
       const bucketCount = Math.min(200, Math.max(10, Math.floor(duration / secondsPerBucket)));
       const bucketSize = duration / bucketCount;
@@ -140,34 +188,20 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       const max = Math.max(...density, 1);
+      const getGrayscale = norm => `hsl(0, 0%, ${90 - norm * 60}%)`;
+      const getColor = norm => `hsl(250, 80%, ${85 - norm * 60}%)`;
 
-      const getGrayscale = (norm) => {
-        const lightness = 90 - norm * 60;
-        return `hsl(0, 0%, ${lightness}%)`;
-      };
-
-      const getColor = (norm) => {
-        const lightness = 85 - norm * 60;
-        return `hsl(250, 80%, ${lightness}%)`;
-      };
-
-      const stopsGray = density.map((count, i) => {
-        const pct = (i / bucketCount) * 100;
-        return `${getGrayscale(count / max)} ${pct.toFixed(2)}%`;
-      });
-
-      const stopsColor = density.map((count, i) => {
-        const pct = (i / bucketCount) * 100;
-        return `${getColor(count / max)} ${pct.toFixed(2)}%`;
-      });
+      const stopsGray = density.map((count, i) =>
+        `${getGrayscale(count / max)} ${(i / bucketCount) * 100}%`);
+      const stopsColor = density.map((count, i) =>
+        `${getColor(count / max)} ${(i / bucketCount) * 100}%`);
 
       if (heatmapOverlay) {
         heatmapOverlay.style.background = `linear-gradient(to right, ${stopsGray.join(', ')})`;
       }
-
       barFill.style.background = `linear-gradient(to right, ${stopsColor.join(', ')})`;
     })
-    .catch(err => console.error("Failed to load comment timestamps for heatmap:", err));
+    .catch(err => console.error("Failed to load heatmap data:", err));
 
   render();
 });
