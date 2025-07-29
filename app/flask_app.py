@@ -89,9 +89,25 @@ def parse_timestamp_string(ts_str):
 def catalogue():
     conn = sqlite3.connect(MEDIA_DB_PATH)
 
-    movie_query = "SELECT * FROM featured_movies ORDER BY rank ASC LIMIT 50"
-    tv_query = "SELECT * FROM featured_tv ORDER BY rank ASC LIMIT 10"
+    movie_query = """
+        SELECT fm.*, m.overview, m.vote_average, m.poster_url, m.title
+        FROM featured_movies fm
+        INNER JOIN media m ON fm.tmdb_id = m.tmdb_id
+        ORDER BY fm.rank ASC 
+        LIMIT 50
+    """
+    
+    tv_query = """
+        SELECT ftv.*, m.overview, m.vote_average, m.poster_url, m.title
+        FROM featured_tv ftv
+        INNER JOIN media m ON ftv.tmdb_id = m.tmdb_id
+        ORDER BY ftv.rank ASC 
+        LIMIT 10
+    """
+    
+    # Anime query remains the same since it already has description
     anime_query = "SELECT * FROM anime ORDER BY trending DESC LIMIT 10"
+
 
     def fetch_rows(conn, query):
         cursor = conn.execute(query)
@@ -101,12 +117,12 @@ def catalogue():
     movies = fetch_rows(conn, movie_query)
     tv_shows = fetch_rows(conn, tv_query)
     anime = fetch_rows(conn, anime_query)
-
+    user_favorites = get_user_favorites()  # Add this line
     conn.close()
 
     users = User.query.all()
     return render_template(
-        "catalogue.html", movies=movies, tv_shows=tv_shows, anime=anime, users=users
+        "catalogue.html", movies=movies, tv_shows=tv_shows, anime=anime, users=users, user_favorites=user_favorites
     )
 
 

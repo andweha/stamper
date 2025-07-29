@@ -11,9 +11,7 @@ h1 {
 
 img {
   width: 80%; 
-  max-width: 300px;
   border-radius: 8px;
-  margin: 20px 0;
   text-align: center;
 }
 
