@@ -1,19 +1,50 @@
+.main-container {
+  background-color: #2a2a3d;
+  display: flex;
+  justify-content: center;
+  overflow-x: visible;
+}
+
+.Details {
+  width: 80%;
+}
+
+.Container {
+  background-color: transparent;
+  display: flex;
+  align-items: flex-start;
+  height: 80vh;
+  max-width: 90%;
+}
+
 .seasons-button-grid {
   display: grid;
-  grid-template-columns: repeat(5, 120px);
-  gap: 20px 28px;
-  justify-content: center; 
-  margin: 30px auto 0;
+  grid-auto-flow: row; 
+  padding: 0 15px;
+
+  max-height: 80vh; 
+  width: 170px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+ 
+  scrollbar-width: thin;
+  scrollbar-color: white rgb(42, 42, 61);
 }
 
 .btn-season {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  text-align: center;
   background-color: #fff;
+  display: flex;
+  width: 110%;
+  padding: 12px;
+
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  
   color: #1d1d28;
   font-weight: bold;
+  font-size: 15px;
+
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
   transition: background-color 0.3s ease, transform 0.2s ease;
@@ -21,42 +52,38 @@
 }
 
 .btn-season:hover {
-  background-color: #f0f0f0;
+  background-color: #1e1e2f;
+  color: white;
+  border-radius: 8px;
   transform: scale(1.05);
   cursor: pointer;
 }
 
 .season-block {
-  position: relative;
-  width: 100%;
+  position: absolute;
 }
 
 .dropdown-eps {
   display: none; 
-  position: absolute;
+  position: fixed;
 
-  top: auto; 
-  bottom: 100%; 
-  margin-bottom: 6px;
-  left: 0; 
+  margin-left: 8px;
+  white-space: normal;
 
-  background-color: #2c2c3f;
-  color: white;
+  background-color: #1e1e2f;
+  z-index: 1000; 
+  padding: 5px 20px 20px 20px;
+  border-radius: 5px; 
 
-  padding: 12px 16px;
-  border-radius: 8px;
-  z-index: 20; 
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-
-  width: max-content; 
+  width: 150px;
   max-height: 300px;
   overflow-y: auto; 
   scrollbar-width: thin;
-  scrollbar-color: #555 #2c2c3f; 
+  scrollbar-color: #555 #1e1e2f; 
 }
 
-.season-block:hover .dropdown-eps {
-  display: block; 
+li {
+  text-align: center;
 }
 
 .dropdown-eps ul {
@@ -78,4 +105,34 @@
 .dropdown-eps a:hover {
   color: #66afe9;
   text-decoration: underline;
+}
+
+.season-block, .dropdown-container {
+  position: relative; 
+  display: block; 
+  margin-bottom: 10px; 
+  width: 100%;
+}
+
+.movie-title {
+  color: white;
+}
+
+.title-poster {
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.movie-poster {
+  box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.5);
+}
+
+.item-overview {
+  color: lightgrey;
+  padding-top: 0px;
+}
+
+.item-data {
+  color: lightgrey;
+  font-weight: bold;
 }

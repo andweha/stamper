@@ -79,3 +79,47 @@
   width: 100%;
   margin: 0 auto;
 }
+
+}
+
+.poster-wrapper {
+  flex: 0 0 300px;
+}
+
+.poster-wrapper img {
+  max-height: 300px;
+  max-width: 300px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+  display: block;
+  margin: 0;
+}
+
+.title-poster {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.title-poster h2 {
+  margin: 0 0 0.5rem 0;
+  line-height: 1.25;
+}
+
+.overview {
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  margin: 0 auto;
+}
