@@ -97,8 +97,20 @@ def seconds_to_hours_minutes(total_seconds):
 def catalogue():
     conn = sqlite3.connect(MEDIA_DB_PATH)
 
-    movie_query = "SELECT * FROM featured_movies ORDER BY rank ASC LIMIT 50"
-    tv_query = "SELECT * FROM featured_tv ORDER BY rank ASC LIMIT 10"
+    movie_query = """
+        SELECT *
+        FROM featured_movies fm
+        ORDER BY fm.rank ASC 
+        LIMIT 50
+    """
+    
+    tv_query = """
+        SELECT *
+        FROM featured_tv ftv
+        ORDER BY ftv.rank ASC 
+        LIMIT 10
+    """
+    # Anime query remains the same since it already has description
     anime_query = "SELECT * FROM anime ORDER BY trending DESC LIMIT 10"
 
     def fetch_rows(conn, query):
@@ -224,7 +236,7 @@ def view_movie(movie_id):
         )
         db.session.add(new_comment)
         db.session.commit()
-        flash("Comment added!")
+        flash("Comment added!", "toast")  # Change from default to "toast"
         return redirect(url_for("view_movie", movie_id=movie_id))
 
     comments = (
@@ -282,7 +294,7 @@ def view_episode(episode_id):
         )
         db.session.add(new_comment)
         db.session.commit()
-        flash("Comment added!")
+        flash("Comment added!", "toast")  # Change all instances
         return redirect(url_for("view_episode", episode_id=episode_id))
 
     comments = (
@@ -380,9 +392,8 @@ def view_anime_episode(episode_id):
         )
         db.session.add(new_comment)
         db.session.commit()
-        flash("Comment added!")
+        flash("Comment added!", "toast")
         return redirect(url_for("view_anime_episode", episode_id=episode_id))
-
     comments = (
         Comment.query.filter_by(episode_id=int(episode_id))
         .order_by(Comment.timestamp)
@@ -533,7 +544,6 @@ def api_search():
     #     ])
 
     # Step 2: Fallback to TMDB if no local matches
-    TMDB_API_KEY = os.getenv("TMDB_API_KEY")
     url = f"https://api.themoviedb.org/3/search/multi"
     res = requests.get(url, params={
         "api_key": TMDB_API_KEY,

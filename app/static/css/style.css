@@ -24,6 +24,7 @@
 @import url('pages/season-page.css');
 @import url('pages/history.css');
 @import url('pages/profile.css');
+@import url('components/toasts.css');
 
 /* MISCELLANEOUS STYLES */ 
 .greeting {

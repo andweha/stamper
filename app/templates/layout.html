@@ -9,6 +9,19 @@
 
 <body>
   {% if request.endpoint not in ['login', 'register'] %}
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Flash messages for toasts (hidden from view) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div id="flash-messages" style="display: none;">
+          {% for category, message in messages %}
+            <div class="flash-message" data-category="{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
   <nav class="topbar">
     <!-- Left: Logo + Navigation -->
     <div class="topbar-left">
@@ -70,19 +83,11 @@
 
   <main role="main" class="main-content">
     <div class="main-container">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
       {% block content %}{% endblock %}
-      {% block scripts %}
-      <script src="{{ url_for('static', filename='scripts/search_bar.js') }}"></script>
-      {% endblock %}
+      {% block scripts %}{% endblock %}
     </div>
   </main>
+  <script src="{{ url_for('static', filename='scripts/search_bar.js') }}"></script>
 </body>
 
 </html>
