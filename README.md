@@ -56,5 +56,5 @@ TENOR_API_KEY=your_tenor_key
 The project is deployed on PythonAnywhere: https://jalenseotechdev.pythonanywhere.com/
 
 ### Workflows
-[![Check Style](https://github.com/jalenjaloney/Civic-Compass/actions/workflows/stylecheck.yaml/badge.svg)](https://github.com/jalenjaloney/Civic-Compass/actions/workflows/stylecheck.yaml)
-[![Tests](https://github.com/jalenjaloney/Civic-Compass/actions/workflows/tests.yaml/badge.svg)](https://github.com/jalenjaloney/Civic-Compass/actions/workflows/tests.yaml)
+[![Check Style](https://github.com/jalenjaloney/stamper/actions/workflows/style_check.yaml/badge.svg)](https://github.com/jalenjaloney/stamper/actions/workflows/style_check.yaml)
+[![Tests](https://github.com/jalenjaloney/stamper/actions/workflows/tests.yaml/badge.svg)](https://github.com/jalenjaloney/stamper/actions/workflows/tests.yaml)
