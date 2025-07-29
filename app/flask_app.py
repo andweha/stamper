@@ -237,7 +237,7 @@ def view_movie(movie_id):
         form=form,
         comments=comments,
         emoji_summary=emoji_summary,
-        comment_media_id=movie["tmdb_id"]
+        comment_media_id=movie["tmdb_id"],
         user_favorites=user_favorites,
     )
     

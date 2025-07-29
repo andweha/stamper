@@ -3,7 +3,6 @@
   flex-direction: column;
   height: 100vh;
   width: calc(100vw - 220px);
-  margin-left: 220px;
   box-sizing: border-box;
   overflow: visible;
 }
