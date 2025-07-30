@@ -137,3 +137,7 @@
   border-radius: 6px;
   margin-top: 0.25rem;
 }
+
+.recent-comments-list a {
+    text-decoration: none;
+}
