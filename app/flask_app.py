@@ -348,7 +348,7 @@ def view_anime(anime_id):
     # get episode nums
     episodes.sort(key=lambda x: extract_ep_num(x.get('episode_title')), reverse=False)
 
-    return render_template("anime_page.html", anime=anime, episodes=episodes,user_favorites=user_favorites,media_type="anime",media_id=anime["anilist_id"],)
+    return render_template("season_page.html", anime=anime, episodes=episodes,user_favorites=user_favorites,media_type="anime",media_id=anime["anilist_id"],)
 
 # anime details
 @app.route("/aniepisode/<int:episode_id>", methods=["GET", "POST"])

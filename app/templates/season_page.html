@@ -2,21 +2,30 @@
 {% block content %}
 <main class="main-container">
   <div class="Container">
-    {% if item %}
+    {% set is_anime = anime is defined %}
+    {% set content = anime if is_anime else item %}
+
+    {% if content %}
     <div class="Details">
-      <!-- Left: Poster -->
+      <!-- Poster -->
       <div class="title-poster">
-        {% if item.poster_url %}
-        <img class="movie-poster" src="{{ item.poster_url }}" alt="{{ item.title }}" width="300">
+        {% if content.poster_url or content.cover_url %}
+        <img class="movie-poster"
+             src="{{ content.poster_url or content.cover_url }}"
+             alt="{{ content.title or content.title_english }}"
+             width="300">
         {% endif %}
       </div>
 
-      <!-- Right: Textual Content -->
+      <!-- Text -->
       <div class="textual-info">
         <div class="title-row">
-          <h2 class="movie-title" style="margin: 0;">{{ item.title }}</h2>
+          <h2 class="movie-title" style="margin: 0;">
+            {{ content.title or content.title_english }}
+          </h2>
+          <!-- Star button (uses media_id regardless of content type) -->
           <button class="star-button" data-show-id="{{ media_id }}">
-            {% if item.tmdb_id in user_favorites %}
+            {% if media_id in user_favorites %}
               ⭐
             {% else %}
               ☆
@@ -25,10 +34,14 @@
         </div>
 
         <div class="Overview">
-          <p class="item-overview">{{ item.overview }}</p>
-          <p><strong>📺 Type:</strong> {{ item.media_type|upper }}</p>
-          <p><strong>📅 Release Date:</strong> {{ item.release_date }}</p>
-          <p><strong>⭐ Rating:</strong> {{ item.vote_average }}</p>
+          <p class="item-overview">
+            {{ content.overview or content.description }}
+          </p>
+          {% if not is_anime %}
+            <p><strong>📺 Type:</strong> {{ content.media_type|upper }}</p>
+          {% endif %}
+          <p><strong>📅 Release Date:</strong> {{ content.release_date or content.start_date }}</p>
+          <p><strong>⭐ Rating:</strong> {{ content.vote_average or content.average_score }}</p>
         </div>
       </div>
     </div>
@@ -36,7 +49,18 @@
     <h2>Media not found.</h2>
     {% endif %}
 
-    {% if item.media_type == "tv" and seasons %}
+    <!-- Episodes / Seasons -->
+    {% if is_anime and episodes %}
+    <div class="seasons-button-grid">
+      {% for episode in episodes %}
+      <div class="season-block">
+        <a href="{{ url_for('view_anime_episode', episode_id=episode.episode_id) }}">
+          <button class="btn-season">{{ episode.episode_title }}</button>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% elif item and item.media_type == "tv" and seasons %}
     <div class="seasons-button-grid">
       {% for season in seasons %}
       <div class="season-block dropdown-container">
@@ -56,10 +80,9 @@
     {% endif %}
   </div>
 </main>
-
-<script src="{{ url_for('static', filename='scripts/dropdown.js') }}"></script>
 {% endblock content %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='scripts/dropdown.js') }}"></script>
 <script src="{{ url_for('static', filename='scripts/favorites.js') }}"></script>
 {% endblock scripts %}
