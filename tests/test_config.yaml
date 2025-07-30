@@ -1,11 +1,9 @@
-# Test Configuration for Flask Media App
 test_config:
   database:
     test_db_uri: "sqlite:///:memory:"
     media_db_path: "test_media.db"
   
   api_keys:
-    # Use mock keys for testing
     tmdb_api_key: "test_tmdb_key"
     genai_key: "test_genai_key"
     tenor_api_key: "test_tenor_key"
@@ -50,11 +48,11 @@ test_config:
     
     comments:
       - content: "This is a test comment"
-        timestamp: 300  # 5 minutes
+        timestamp: 300
         episode_id: 12345
         media_title: "Test Movie"
       - content: "Another test comment"
-        timestamp: 600  # 10 minutes
+        timestamp: 600
         episode_id: 12345
         media_title: "Test Movie"
 

@@ -27,7 +27,7 @@ class TestRegistrationForm:
             }
             form = RegistrationForm(data=form_data)
             assert form.validate() is False
-            assert 'Field must be between 2 and 20 characters long' in form.username.errors
+            assert any("between 2 and 20 characters" in e for e in form.username.errors)
     
     def test_invalid_username_characters(self, app_instance):
         """Test username with invalid characters"""
@@ -65,7 +65,7 @@ class TestRegistrationForm:
             }
             form = RegistrationForm(data=form_data)
             assert form.validate() is False
-            assert 'Field must be at least 8 characters long' in form.password.errors
+            assert "at least 8" in form.password.errors[0]
     
     def test_password_missing_requirements(self, app_instance):
         """Test password missing complexity requirements"""

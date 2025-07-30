@@ -82,23 +82,27 @@ def format_start_date(start_date):
 def parse_anime(anime_raw):
     parsed = []
     for anime in anime_raw:
-        # clean up the desciptions before appending
-        raw_description = anime["description"]
+        cleaned_descrip = ""
+        description = anime.get("description")
+        if description:
+            # Remove HTML tags and clean up
+            description = re.sub(r'<[^>]+>', '', description)
+            # clean up the desciptions before appending
+            raw_description = anime["description"]
 
-        cleaned_descrip = raw_description
+            cleaned_descrip = raw_description
 
-        # remove the HTML tags and decode the entries
-        cleaned_descrip = re.sub(r'<[^>]*>', '', cleaned_descrip)
-        cleaned_descrip = html.unescape(cleaned_descrip)
+            # remove the HTML tags and decode the entries
+            cleaned_descrip = re.sub(r'<[^>]*>', '', cleaned_descrip)
+            cleaned_descrip = html.unescape(cleaned_descrip)
 
-        cleaned_descrip = re.sub(r'\(Source:.*', '', cleaned_descrip, flags=re.DOTALL)
-        cleaned_descrip = re.sub(r'Notes:.*', '', cleaned_descrip, flags=re.IGNORECASE | re.DOTALL)
+            cleaned_descrip = re.sub(r'\(Source:.*', '', cleaned_descrip, flags=re.DOTALL)
+            cleaned_descrip = re.sub(r'Notes:.*', '', cleaned_descrip, flags=re.IGNORECASE | re.DOTALL)
 
-        # remove tags
-        cleaned_descrip = cleaned_descrip.replace('<br>', '\n')
-        cleaned_descrip = re.sub(r'\n+', '\n', cleaned_descrip)
-        cleaned_descrip = cleaned_descrip.strip()
-
+            # remove tags
+            cleaned_descrip = cleaned_descrip.replace('<br>', '\n')
+            cleaned_descrip = re.sub(r'\n+', '\n', cleaned_descrip)
+            cleaned_descrip = cleaned_descrip.strip()
 
         parsed.append({
             "anilist_id": anime["id"],
@@ -127,6 +131,9 @@ def fetch_episodes(anilist_id):
     response.raise_for_status()
     data = response.json()
     media = data.get("data", {}).get("Media", {})
+    
+    if media is None:
+        return {"streamingEpisodes": [], "duration": None}
 
     return {
         "streamingEpisodes": media.get("streamingEpisodes", []),
@@ -137,7 +144,7 @@ def fetch_episodes(anilist_id):
 def extract_ep_num(episode_title):
     if episode_title:
         # all title starts w/ episode _
-        match = re.match(r'^(?:Episode|Ep)?\s*(\d+)', episode_title, re.IGNORECASE)
+        match = re.match(r'^\s*(?:Episode|Ep\.?)?\s*(\d+)', episode_title, re.IGNORECASE)
         if match:
             return int(match.group(1))
         # if no leading num

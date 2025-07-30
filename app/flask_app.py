@@ -50,9 +50,6 @@ proxied = FlaskBehindProxy(app)
 app.config["SECRET_KEY"] = "SECRET_KEY"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///site.db"
 
-dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
-load_dotenv(dotenv_path=dotenv_path)
-
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 db.init_app(app)
@@ -69,16 +66,22 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
 
-MEDIA_DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "media.db"))
-
 # Helper function to parse comment timestamp
 def parse_timestamp_string(ts_str):
-    parts = list(map(int, ts_str.split(":")))
+    try: 
+        parts = list(map(int, ts_str.split(":")))
+    except ValueError:
+        raise ValueError("Invalid timestamp format: contains non-numeric values.")
+
     if len(parts) == 2:
         minutes, seconds = parts
+        if not (0 <= minutes < 60 and 0 <= seconds < 60):
+            raise ValueError("Invalid timestamp format: minutes or seconds out of range.")
         return minutes * 60 + seconds
     elif len(parts) == 3:
         hours, minutes, seconds = parts
+        if not (0 <= hours and 0 <= minutes < 60 and 0 <= seconds < 60):
+            raise ValueError("Invalid timestamp format: minutes or seconds out of range.")
         return hours * 3600 + minutes * 60 + seconds
     else:
         raise ValueError("Invalid timestamp format")
@@ -95,7 +98,7 @@ def seconds_to_hours_minutes(total_seconds):
 # Update TMDB to show to catalogue page
 @app.route("/")
 def catalogue():
-    conn = sqlite3.connect(MEDIA_DB_PATH)
+    conn = sqlite3.connect(app.config["MEDIA_DB_PATH"])
 
     movie_query = """
         SELECT *
@@ -131,7 +134,7 @@ def catalogue():
 
 @app.route("/media/<int:media_id>")
 def get_media(media_id):
-    conn = sqlite3.connect(MEDIA_DB_PATH)
+    conn = sqlite3.connect(app.config["MEDIA_DB_PATH"])
     
     # START OF SHOW LIVE QUERY
     # Check if media exists in our database
@@ -186,10 +189,7 @@ def get_media(media_id):
 @app.route("/movie/<int:movie_id>", methods=["GET", "POST"])
 def view_movie(movie_id):
     # get episode from sqlite
-    MEDIA_DB_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "media.db"
-    )
-    conn = sqlite3.connect(MEDIA_DB_PATH)
+    conn = sqlite3.connect(app.config["MEDIA_DB_PATH"])
 
     movie_query = f"SELECT * FROM media WHERE tmdb_id = {movie_id} AND media_type = 'movie'"
     cursor = conn.execute(movie_query)
@@ -264,7 +264,7 @@ def view_movie(movie_id):
 # for shows
 @app.route("/episode/<int:episode_id>", methods=["GET", "POST"])
 def view_episode(episode_id):
-    conn = sqlite3.connect(MEDIA_DB_PATH)
+    conn = sqlite3.connect(app.config["MEDIA_DB_PATH"])
     episode_query = f"SELECT * FROM episodes WHERE episode_id = {episode_id}"
     cursor = conn.execute(episode_query)
     row = cursor.fetchone()
@@ -322,7 +322,7 @@ def view_episode(episode_id):
 # anime
 @app.route("/anime/<int:anime_id>")
 def view_anime(anime_id):
-    conn = sqlite3.connect(MEDIA_DB_PATH)
+    conn = sqlite3.connect(app.config["MEDIA_DB_PATH"])
 
     anime_query = f"SELECT * FROM anime WHERE anilist_id = {anime_id}"
     cursor = conn.execute(anime_query)
@@ -355,7 +355,7 @@ def view_anime(anime_id):
 # anime details
 @app.route("/aniepisode/<int:episode_id>", methods=["GET", "POST"])
 def view_anime_episode(episode_id):
-    conn = sqlite3.connect(MEDIA_DB_PATH)
+    conn = sqlite3.connect(app.config["MEDIA_DB_PATH"])
 
     episode_query = f"SELECT * FROM anime_ep WHERE episode_id = {episode_id}"
 
@@ -452,10 +452,8 @@ def favorites():
         return render_template("Favorited.html", shows=[])
 
     # Step 2: Open a raw SQLite connection to media.db
-    MEDIA_DB_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "media.db"
-    )
-    conn = sqlite3.connect(MEDIA_DB_PATH)
+    conn = sqlite3.connect(app.config["MEDIA_DB_PATH"])
+
     conn.row_factory = sqlite3.Row  # enables dict-like row access
     cursor = conn.cursor()
 

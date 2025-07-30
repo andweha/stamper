@@ -29,7 +29,7 @@ def fetch_and_cache_movie(tmdb_id, conn):
     cursor = conn.cursor()
     cursor.execute(
         """
-        INSERT OR IGNORE INTO media (
+        INSERT OR REPLACE INTO media ( # <-- Changed from IGNORE to REPLACE
             tmdb_id, title, media_type, poster_url,
             overview, release_date, runtime, vote_average
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -62,7 +62,7 @@ def fetch_and_cache_show(tmdb_id, conn):
     
     cursor.execute(
         """
-        INSERT OR IGNORE INTO media (
+        INSERT OR REPLACE INTO media ( # <-- Changed from IGNORE to REPLACE
             tmdb_id, title, media_type, poster_url,
             overview, release_date, runtime, vote_average
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -78,7 +78,7 @@ def fetch_and_cache_show(tmdb_id, conn):
         # Insert season - adjust column names based on your actual schema
         cursor.execute(
             """
-            INSERT OR IGNORE INTO seasons (
+            INSERT OR REPLACE INTO seasons ( # <-- Changed from IGNORE to REPLACE
                 season_id, tv_id, title, season_number,
                 name, overview, poster_url, air_date,
                 episode_count, vote_average
@@ -104,10 +104,9 @@ def fetch_and_cache_show(tmdb_id, conn):
         if episode_response.ok:
             episodes = episode_response.json().get("episodes", [])
             for ep in episodes:
-                # Insert episode - adjust column names based on your actual schema
                 cursor.execute(
                     """
-                    INSERT OR IGNORE INTO episodes (
+                    INSERT OR REPLACE INTO episodes ( # <-- Changed from IGNORE to REPLACE
                         episode_id, season_id, tv_id, season_number,
                         episode_number, episode_name, overview, air_date,
                         runtime, vote_average, still_url

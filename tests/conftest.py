@@ -26,36 +26,36 @@ def test_config():
     return load_test_config()
 
 
+# conftest.py
+
 @pytest.fixture
-def app_instance(test_config):
+def app_instance(test_config, media_db):  # <-- Add media_db as a dependency
     """Create and configure a new app instance for each test."""
-    # Create a temporary file for the test database
     db_fd, db_path = tempfile.mkstemp()
-    media_db_fd, media_db_path = tempfile.mkstemp()
+    # media_db_fd and media_db_path are no longer created here
     
     app.config.update({
         "TESTING": True,
         "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}",
         "SECRET_KEY": "test-secret-key",
-        "WTF_CSRF_ENABLED": False,  # Disable CSRF protection for testing
+        "WTF_CSRF_ENABLED": False,
+        "MEDIA_DB_PATH": media_db,  # <-- Use the path from the media_db fixture
     })
     
-    # Mock environment variables
     with patch.dict(os.environ, {
         'TMDB_API_KEY': test_config['test_config']['api_keys']['tmdb_api_key'],
         'GENAI_KEY': test_config['test_config']['api_keys']['genai_key'],
         'TENOR_API_KEY': test_config['test_config']['api_keys']['tenor_api_key'],
+        'MEDIA_DB_PATH': media_db, # <-- Also update the patched env var
     }):
         with app.app_context():
             db.create_all()
             yield app
-    
+
     # Clean up
     os.close(db_fd)
     os.unlink(db_path)
-    os.close(media_db_fd)
-    os.unlink(media_db_path)
-
+    # The media_db fixture will handle its own cleanup
 
 @pytest.fixture
 def client(app_instance):
@@ -235,11 +235,11 @@ def media_db(test_config):
         ))
     
     conn.commit()
+    conn.close()
     
     yield db_path
     
     # Clean up
-    conn.close()
     os.close(db_fd)
     os.unlink(db_path)
 
