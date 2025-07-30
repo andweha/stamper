@@ -51,8 +51,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         img.onclick = () => {
           gifUrlInput.value = url;
-          previewDiv.innerHTML = `<img src="${url}" width="150">`;
           gifSearchPopup.classList.add("hidden");
+
+          // Auto-submit the form after GIF is selected
+          const commentForm = document.querySelector(".chat-input-form");
+          if (commentForm) {
+            const submitButton = commentForm.querySelector('.comment-submit');
+            if (submitButton) {
+              submitButton.click();  // this avoids the shadowing issue
+            } else {
+              console.warn("Submit button not found.");
+            }
+          } else {
+            console.warn("Comment form not found.");
+          }
         };
 
         wrapper.appendChild(img);

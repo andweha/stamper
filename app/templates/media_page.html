@@ -7,19 +7,12 @@
     <div class="media-details">
       {% if media.still_url or media.thumbnail or media.poster_url %}
       <div class="poster-wrapper">
-        <img src="{{ media.still_url or media.thumbnail or media.poster_url }}" alt="{{ media.title or media.episode_title or media.episode_name }}">
+        <img class="movie-poster" src="{{ media.still_url or media.thumbnail or media.poster_url }}" alt="{{ media.title or media.episode_title or media.episode_name }}">
       </div>
       {% endif %}
 
       <div class="title-poster">
         <h2>
-      <button class="star-button" data-show-id="{% if media_type == 'movie' %}{{ media.tmdb_id }}{% elif media_type == 'episode' %}{{ media.tv_id }}{% elif media_type == 'anime_episode' %}{{ anime.anilist_id }}{% else %}{{ media.tmdb_id }}{% endif %}">
-        {% if media.tmdb_id in user_favorites %}
-          ⭐
-        {% else %}
-          ☆
-        {% endif %}
-      </button>
           {% if media_type == 'episode' %}
             Episode {{ media.episode_number }}: {{ media.episode_name }}
           {% elif media_type == 'anime_episode' %}
@@ -27,6 +20,13 @@
           {% else %}
             {{ media.title }}
           {% endif %}
+          <button class="star-button" data-show-id="{% if media_type == 'movie' %}{{ media.tmdb_id }}{% elif media_type == 'episode' %}{{ media.tv_id }}{% elif media_type == 'anime_episode' %}{{ anime.anilist_id }}{% else %}{{ media.tmdb_id }}{% endif %}">
+            {% if media.tmdb_id in user_favorites %}
+              ⭐
+            {% else %}
+              ☆
+            {% endif %}
+          </button>
         </h2>
 
         {% if media_type != 'anime_episode' and media.overview %}
@@ -86,7 +86,10 @@
   <!-- COMMENT SECTION -->
   <section class="chat-wrapper">
     <div class="comments-toggle-wrapper">
-      <button id="showCommentsBtn" class="show-comments-btn">Show Comments</button>
+      <button id="showCommentsBtn" class="show-comments-btn">
+        <span id="comments-btn-text">Show Comments</span>
+        <span id="comments-arrow" class="arrow" style="text-align: right;">⏷</span>
+      </button>
     </div>
     <div class="comment-feed" id="comments-container" style="text-align:left;">
       {% for comment in comments %}
@@ -118,7 +121,6 @@
         </div>
         {{ form.submit(class_='comment-submit') }}
       </div>
-          <!-- Selected GIF preview inside form -->
     </form>
     {% else %}
     <p><a href="{{ url_for('login') }}">Log in</a> to leave a comment.</p>

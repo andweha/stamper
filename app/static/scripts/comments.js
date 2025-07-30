@@ -1,38 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("showCommentsBtn");
   const commentsContainer = document.getElementById("comments-container");
-  
-  // Get saved state from localStorage, default to false (hidden)
+  const btnText = document.getElementById("comments-btn-text");
+  const arrow = document.getElementById("comments-arrow");
+
   let commentsVisible = localStorage.getItem("commentsVisible") === "true";
 
+  function updateButtonUI(visible) {
+    btnText.textContent = visible ? "Hide Comments" : "Show Comments";
+    arrow.textContent = visible ? "⏶" : "⏷";
+  }
+
   if (btn && commentsContainer) {
-    // Set initial state based on saved preference
     if (commentsVisible) {
       commentsContainer.classList.remove("hidden");
-      btn.textContent = "Hide Comments";
     } else {
       commentsContainer.classList.add("hidden");
-      btn.textContent = "Show Comments";
     }
+    updateButtonUI(commentsVisible);
 
     btn.addEventListener("click", () => {
       commentsVisible = !commentsVisible;
-      
-      // Save state to localStorage
       localStorage.setItem("commentsVisible", commentsVisible.toString());
-      
-      if (commentsVisible) {
-        // Show comments
-        commentsContainer.classList.remove("hidden");
-        btn.textContent = "Hide Comments";
-      } else {
-        // Hide comments
-        commentsContainer.classList.add("hidden");
-        btn.textContent = "Show Comments";
-      }
+
+      commentsContainer.classList.toggle("hidden", !commentsVisible);
+      updateButtonUI(commentsVisible);
     });
   }
 });
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("comments-container");
