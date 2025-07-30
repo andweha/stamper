@@ -16,9 +16,9 @@ body {
 }
 
 .main-container {
-  padding: 30px;
+  padding: 30px 0 0 0;
   background-color: #2a2a3d;
-  min-height: 100vh;
+  height: calc(100vh - 60px);
   width: calc(100vw - 220px);
   display: flex;
   flex-direction: column;

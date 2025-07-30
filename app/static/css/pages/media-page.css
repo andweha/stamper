@@ -1,7 +1,7 @@
 .media-page-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 60px);
   width: calc(100vw - 220px);
   box-sizing: border-box;
   overflow: visible;
@@ -30,7 +30,7 @@
   flex-direction: column;
   overflow: hidden;
   max-width: clamp(90ch, 90%, 1400px);
-  margin: 0 auto 2rem auto;
+  margin: 0 auto 0 auto;
 }
 
 .media-details {
