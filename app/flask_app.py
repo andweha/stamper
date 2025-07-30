@@ -608,16 +608,23 @@ def profile():
     grand_total_seconds = total_movie_seconds + total_show_seconds + total_anime_seconds
     grand_total_hours, grand_total_minutes = seconds_to_hours_minutes(grand_total_seconds)
 
-    recent_comments_query = (
+    raw_recent_comments = (
         db.session.query(Comment, History.title)
         .join(History, Comment.episode_id == History.media_id)
         .filter(Comment.user_id == current_user.id)
         .order_by(Comment.created_at.desc())
         .limit(5)
+        .all()
     )
-
-    # Format for display
-    recent_comments = Comment.query.order_by(Comment.created_at.desc()).limit(5).all()
+    recent_comments = []
+    for comment, media_title in raw_recent_comments:
+        recent_comments.append({
+            'timestamp': comment.timestamp,
+            'media_title': media_title,
+            'episode_id': comment.episode_id,
+            'content': comment.content,
+            'gif_url': comment.gif_url
+        })
 
     # Pass data to the template
     return render_template(
