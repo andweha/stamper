@@ -255,6 +255,7 @@ def view_movie(movie_id):
         media_type="movie",
         form=form,
         comments=comments,
+        comment_count=len(comments),
         emoji_summary=emoji_summary,
         comment_media_id=movie["tmdb_id"],
         user_favorites=user_favorites,
@@ -312,6 +313,7 @@ def view_episode(episode_id):
         media_type="tv",
         form=form,
         comments=comments,
+        comment_count=len(comments),
         emoji_summary=emoji_summary,
         comment_media_id=episode["episode_id"],
     )
@@ -410,6 +412,7 @@ def view_anime_episode(episode_id):
         media_type="anime_episode",
         form=form,
         comments=comments,
+        comment_count=len(comments),
         emoji_summary=emoji_summary,
         user_favorites=user_favorites,
         comment_media_id=episode["episode_id"],

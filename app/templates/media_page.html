@@ -87,7 +87,7 @@
   <section class="chat-wrapper">
     <div class="comments-toggle-wrapper">
       <button id="showCommentsBtn" class="show-comments-btn">
-        <span id="comments-btn-text">Show Comments</span>
+        <span id="comments-btn-text" data-count="{{ comment_count }}">Show {{ comment_count }} Comment{{ '' if comment_count == 1 else 's' }}</span>
         <span id="comments-arrow" class="arrow" style="text-align: right;">⏷</span>
       </button>
     </div>

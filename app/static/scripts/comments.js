@@ -7,7 +7,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let commentsVisible = localStorage.getItem("commentsVisible") === "true";
 
   function updateButtonUI(visible) {
-    btnText.textContent = visible ? "Hide Comments" : "Show Comments";
+    const count = btnText.dataset.count || '';
+    const label = `${visible ? 'Hide' : 'Show'} ${count} Comment${count === "1" ? "" : "s"}`;
+    btnText.textContent = label;
     arrow.textContent = visible ? "⏶" : "⏷";
   }
 
