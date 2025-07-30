@@ -27,11 +27,22 @@
 }
 
 /* === Individual Comment === */
+.comment-line-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  gap: 0.25rem;
+}
+
 .comment-line {
-  display: block;
+  display: flex;                  /* Make it a horizontal flex container */
+  align-items: center;           /* Vertically center all children */
+  justify-content: space-between; /* Optional: pushes delete button to end */
   color: #f5f5f7;
   font-size: 0.95rem;
   line-height: 1.4;
+  gap: 0.5rem;
 }
 .comment-line strong,
 .comment-line code,
