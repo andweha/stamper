@@ -50,6 +50,10 @@ proxied = FlaskBehindProxy(app)
 app.config["SECRET_KEY"] = "SECRET_KEY"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///site.db"
 
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(PROJECT_ROOT)
+app.config["MEDIA_DB_PATH"] = os.path.join(BASE_DIR, "media.db")
+
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 db.init_app(app)
