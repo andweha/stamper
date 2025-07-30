@@ -1,25 +1,48 @@
-name: Tests
-on: push
+name: Run Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  unit-tests:
+  test:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+    - name: Check out code
+      uses: actions/checkout@v3
 
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.11.3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
 
-      - name: Install tools
-        run: |
-          python -m pip install --upgrade pip pytest
-          pip install -r requirements.txt
+    - name: Install dependencies
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
 
-      - name: Test with unittest
-        env:
-          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GENAI_KEY }}
-        run: python3 -m unittest discover -s tests
+    - name: Run Tests
+      env:
+        TMDB_API_KEY: test_tmdb_key
+        GENAI_KEY: test_genai_key
+        TENOR_API_KEY: test_tenor_key
+        PYTHONPATH: .
+      run: |
+        source venv/bin/activate
+        pytest --cov=app tests/
+
+    - name: Upload coverage to Codecov (optional)
+      if: success() && env.CODECOV_TOKEN != ''
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.xml
+        flags: unittests
+        name: python-tests
+        fail_ci_if_error: false

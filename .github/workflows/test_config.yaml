@@ -1,0 +1,146 @@
+# Test Configuration for Flask Media App
+test_config:
+  database:
+    test_db_uri: "sqlite:///:memory:"
+    media_db_path: "test_media.db"
+  
+  api_keys:
+    # Use mock keys for testing
+    tmdb_api_key: "test_tmdb_key"
+    genai_key: "test_genai_key"
+    tenor_api_key: "test_tenor_key"
+  
+  test_data:
+    users:
+      - username: "testuser1"
+        password: "TestPass123!"
+      - username: "testuser2"
+        password: "SecurePass456@"
+    
+    movies:
+      - tmdb_id: 12345
+        title: "Test Movie"
+        media_type: "movie"
+        overview: "A test movie for testing purposes"
+        release_date: "2023-01-01"
+        runtime: 120
+        vote_average: 8.5
+        poster_url: "https://example.com/poster.jpg"
+    
+    tv_shows:
+      - tmdb_id: 67890
+        title: "Test TV Show"
+        media_type: "tv"
+        overview: "A test TV show for testing purposes"
+        release_date: "2023-01-01"
+        vote_average: 7.8
+        poster_url: "https://example.com/tv_poster.jpg"
+    
+    anime:
+      - anilist_id: 11111
+        title_romaji: "Test Anime"
+        title_english: "Test Anime English"
+        episodes: 24
+        average_score: "8.2"
+        trending: 100
+        genres: "Action, Drama"
+        description: "A test anime for testing purposes"
+        cover_url: "https://example.com/anime_cover.jpg"
+        start_date: "01-01-2023"
+    
+    comments:
+      - content: "This is a test comment"
+        timestamp: 300  # 5 minutes
+        episode_id: 12345
+        media_title: "Test Movie"
+      - content: "Another test comment"
+        timestamp: 600  # 10 minutes
+        episode_id: 12345
+        media_title: "Test Movie"
+
+test_cases:
+  unit_tests:
+    models:
+      - test_user_creation
+      - test_user_password_validation
+      - test_comment_creation
+      - test_favorite_creation
+      - test_history_creation
+    
+    forms:
+      - test_registration_form_valid
+      - test_registration_form_invalid
+      - test_login_form_valid
+      - test_comment_form_valid
+      - test_comment_form_empty
+    
+    utilities:
+      - test_parse_timestamp_string
+      - test_seconds_to_hours_minutes
+      - test_format_start_date
+      - test_extract_ep_num
+
+  integration_tests:
+    routes:
+      - test_catalogue_page
+      - test_movie_page
+      - test_tv_show_page
+      - test_anime_page
+      - test_user_registration
+      - test_user_login
+      - test_user_logout
+      - test_add_comment
+      - test_delete_comment
+      - test_toggle_favorite
+      - test_search_api
+      - test_profile_page
+      - test_history_page
+      - test_favorites_page
+    
+    api_endpoints:
+      - test_comment_timestamps_api
+      - test_search_gifs_api
+      - test_update_watch_time
+      - test_search_api_endpoint
+
+  mock_tests:
+    external_apis:
+      - test_tmdb_api_calls
+      - test_anilist_api_calls
+      - test_tenor_api_calls
+      - test_genai_api_calls
+
+test_settings:
+  parallel_execution: true
+  generate_coverage_report: true
+  min_coverage_percentage: 80
+  mock_external_apis: true
+  cleanup_after_tests: true
+  
+  test_environments:
+    - name: "unit"
+      database: ":memory:"
+      mock_apis: true
+    - name: "integration"
+      database: "test_integration.db"
+      mock_apis: false
+    - name: "e2e"
+      database: "test_e2e.db"
+      mock_apis: false
+
+fixtures:
+  - name: "app"
+    scope: "function"
+    description: "Flask app instance with test config"
+  - name: "client"
+    scope: "function"
+    description: "Test client for making requests"
+  - name: "db"
+    scope: "function"
+    description: "Database instance with test data"
+  - name: "auth_user"
+    scope: "function"
+    description: "Authenticated test user"
+  - name: "sample_data"
+    scope: "function"
+    description: "Sample movies, TV shows, and anime data"
