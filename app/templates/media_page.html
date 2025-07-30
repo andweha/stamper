@@ -13,7 +13,7 @@
 
       <div class="title-poster">
         <h2>
-          {% if media_type == 'episode' %}
+          {% if media_type == 'episode' or media_type == 'tv' %}
             Episode {{ media.episode_number }}: {{ media.episode_name }}
           {% elif media_type == 'anime_episode' %}
             {{ media.episode_title }}
