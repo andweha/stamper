@@ -98,6 +98,7 @@
   align-items: stretch;
   gap: 0.5rem;
   padding: 0.5rem 0;
+  background-color: #1e1e2f;
 }
 
 .comment-with-gif {
