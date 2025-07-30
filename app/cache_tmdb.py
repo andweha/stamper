@@ -29,7 +29,7 @@ def fetch_and_cache_movie(tmdb_id, conn):
     cursor = conn.cursor()
     cursor.execute(
         """
-        INSERT OR REPLACE INTO media ( # <-- Changed from IGNORE to REPLACE
+        INSERT OR REPLACE INTO media (
             tmdb_id, title, media_type, poster_url,
             overview, release_date, runtime, vote_average
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -56,13 +56,13 @@ def fetch_and_cache_show(tmdb_id, conn):
         IMG_BASE_URL + tv_data["poster_path"] if tv_data.get("poster_path") else None,
         tv_data.get("overview"),
         tv_data.get("first_air_date"),
-        None,  # runtime not always available for shows
+        None,
         tv_data.get("vote_average"),
     )
     
     cursor.execute(
         """
-        INSERT OR REPLACE INTO media ( # <-- Changed from IGNORE to REPLACE
+        INSERT OR REPLACE INTO media (
             tmdb_id, title, media_type, poster_url,
             overview, release_date, runtime, vote_average
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -75,10 +75,9 @@ def fetch_and_cache_show(tmdb_id, conn):
         season_number = season.get("season_number")
         season_id = f"{tmdb_id}-{season_number}"
         
-        # Insert season - adjust column names based on your actual schema
         cursor.execute(
             """
-            INSERT OR REPLACE INTO seasons ( # <-- Changed from IGNORE to REPLACE
+            INSERT OR REPLACE INTO seasons (
                 season_id, tv_id, title, season_number,
                 name, overview, poster_url, air_date,
                 episode_count, vote_average
@@ -106,7 +105,7 @@ def fetch_and_cache_show(tmdb_id, conn):
             for ep in episodes:
                 cursor.execute(
                     """
-                    INSERT OR REPLACE INTO episodes ( # <-- Changed from IGNORE to REPLACE
+                    INSERT OR REPLACE INTO episodes (
                         episode_id, season_id, tv_id, season_number,
                         episode_number, episode_name, overview, air_date,
                         runtime, vote_average, still_url
