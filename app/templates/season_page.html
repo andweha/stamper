@@ -1,58 +1,62 @@
 {% extends "layout.html" %}
 {% block content %}
 <main class="main-container">
-<div class="Container">
-  <button class="star-button" data-show-id="{{media_id}}">
-    {% if item.tmdb_id in user_favorites %}
-      ⭐
-    {% else %}
-      ☆
-    {% endif %}
-  </button>
-  {% if item %}
-  <div class="Details">
-    <div class="title-poster">
-      <h1 class="movie-title">{{ item.title }}</h1>
+  <div class="Container">
+    {% if item %}
+    <div class="Details">
+      <!-- Left: Poster -->
+      <div class="title-poster">
         {% if item.poster_url %}
         <img class="movie-poster" src="{{ item.poster_url }}" alt="{{ item.title }}" width="300">
         {% endif %}
-    </div> <!-- Title poster ends here-->
-    <div class="Overview">
-      <p class="item-overview">{{ item.overview }}</p>
-      <p><strong >📺 Type:</strong> {{ item.media_type|upper }}</p>
-      <p><strong >📅 Release Date:</strong> {{ item.release_date }}</p>
-      <p><strong>⭐ Rating:</strong> {{ item.vote_average }}</p>
-    </div> <!-- Overview ends here-->
+      </div>
 
+      <!-- Right: Textual Content -->
+      <div class="textual-info">
+        <div class="title-row">
+          <h2 class="movie-title" style="margin: 0;">{{ item.title }}</h2>
+          <button class="star-button" data-show-id="{{ media_id }}">
+            {% if item.tmdb_id in user_favorites %}
+              ⭐
+            {% else %}
+              ☆
+            {% endif %}
+          </button>
+        </div>
 
-  </div><!-- Movie Details div ends here-->
-  {% else %}
-  <h2>Media not found.</h2>
-  {% endif %}
+        <div class="Overview">
+          <p class="item-overview">{{ item.overview }}</p>
+          <p><strong>📺 Type:</strong> {{ item.media_type|upper }}</p>
+          <p><strong>📅 Release Date:</strong> {{ item.release_date }}</p>
+          <p><strong>⭐ Rating:</strong> {{ item.vote_average }}</p>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <h2>Media not found.</h2>
+    {% endif %}
 
-
-  {% if item.media_type == "tv" and seasons %}
+    {% if item.media_type == "tv" and seasons %}
     <div class="seasons-button-grid">
-    {% for season in seasons %}
+      {% for season in seasons %}
       <div class="season-block dropdown-container">
         <button class="btn-season">Season {{ season.season_number }}</button>
-        
-        <!-- dropdown -->
         <div class="dropdown-eps">
           <ul>
             {% for episode in season.episodes %}
-              <li>
-                <a href="{{ url_for('view_episode', episode_id=episode.episode_id) }}">Episode {{ episode.episode_number }}</a>
-              </li>
+            <li>
+              <a href="{{ url_for('view_episode', episode_id=episode.episode_id) }}">Episode {{ episode.episode_number }}</a>
+            </li>
             {% endfor %}
           </ul>
         </div>
       </div>
-    {% endfor %}
+      {% endfor %}
     </div>
-  {% endif %}
-</div>
+    {% endif %}
+  </div>
 </main>
+
 <script src="{{ url_for('static', filename='scripts/dropdown.js') }}"></script>
 {% endblock content %}
 

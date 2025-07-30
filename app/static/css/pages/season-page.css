@@ -1,15 +1,9 @@
+/* === Layout Containers === */
 .main-container {
   background-color: #2a2a3d;
   display: flex;
   justify-content: center;
   overflow-x: visible;
-}
-
-.Details {
-  width: 80%;
-  display: grid;
-  grid-auto-flow: column;
-  column-gap: 15px;
 }
 
 .Container {
@@ -20,6 +14,76 @@
   max-width: 90%;
 }
 
+.Details {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 1200px;
+  margin: 2rem auto;
+}
+
+/* === Poster Section === */
+.title-poster {
+  flex-shrink: 0;
+  justify-content: flex-start;
+}
+
+.movie-poster {
+  width: 300px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* === Text Section === */
+.textual-info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Title + Star */
+.title-row {
+  display: flex;
+  align-items: center; /* Fix vertical alignment */
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.movie-title {
+  color: white;
+  font-size: 2rem;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.star-button {
+  font-size: 1.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: gold;
+  padding: 0;
+  line-height: 1; /* aligns with text */
+  transition: transform 0.2s ease;
+}
+
+.star-button:hover {
+  transform: scale(1.1);
+}
+
+/* Overview and Metadata */
+.item-overview,
+.item-data {
+  color: lightgray;
+  line-height: 1.5;
+}
+
+.item-overview {
+  margin-bottom: 1rem;
+}
+
+/* === Season Buttons === */
 .seasons-button-grid {
   display: grid;
   grid-auto-flow: row; 
@@ -115,27 +179,4 @@ li {
   display: block; 
   margin-bottom: 10px; 
   width: 100%;
-}
-
-.movie-title {
-  color: white;
-}
-
-.title-poster {
-  justify-content: flex-start;
-}
-
-.movie-poster {
-  box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.5);
-  width: 300px;
-}
-
-.item-overview {
-  color: lightgrey;
-  padding-top: 0px;
-}
-
-.item-data {
-  color: lightgrey;
-  font-weight: bold;
 }
