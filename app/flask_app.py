@@ -291,7 +291,7 @@ def view_episode(episode_id):
             user_id=current_user.id,
             gif_url = form.gif_url.data,
             episode_id=int(episode_id),
-            media_title=f"S:{episode["season_number"]} E:{episode["episode_number"]}: {episode["episode_name"]}"
+            media_title=f"S:{episode['season_number']} E:{episode['episode_number']}: {episode['episode_name']}"
         )
         db.session.add(new_comment)
         db.session.commit()
