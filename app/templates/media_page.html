@@ -93,17 +93,26 @@
     </div>
     <div class="comment-feed" id="comments-container" style="text-align:left;">
       {% for comment in comments %}
-      <div class="comment-line" data-secs="{{ comment.timestamp }}">
-        <strong>{{ comment.user.username }}</strong>
-        <code>{{ "%02d:%02d:%02d"|format(comment.timestamp // 3600, (comment.timestamp % 3600) // 60, comment.timestamp % 60) }}</code>
-        {% if comment.content %}
-          <span class="chat-text">: {{ comment.content }}</span>
-        {% endif %}
-        {% if comment.gif_url %}
-          <div class="chat-gif-wrapper">
-            <img src="{{ comment.gif_url }}" alt="GIF" class="comment-gif">
-          </div>
-        {% endif %}
+      <div class="comment-line-wrapper">
+        <div class="comment-line" data-secs="{{ comment.timestamp }}">
+          <strong>{{ comment.user.username }}</strong>
+          <code>{{ "%02d:%02d:%02d"|format(comment.timestamp // 3600, (comment.timestamp % 3600) // 60, comment.timestamp % 60) }}</code>
+          {% if comment.content %}
+            <span class="chat-text">: {{ comment.content }}</span>
+          {% endif %}
+          {% if comment.gif_url %}
+            <div class="chat-gif-wrapper">
+              <img src="{{ comment.gif_url }}" alt="GIF" class="comment-gif">
+            </div>
+          {% endif %}
+          {% if current_user.is_authenticated and current_user.id == comment.user_id %}
+          <form method="POST"
+                action="{{ url_for('delete_comment', comment_id=comment.id) }}"
+                class="delete-comment-form">
+            <button type="submit" class="delete-comment">Ⅹ</button>
+          </form>
+          {% endif %}
+        </div>
       </div>
       {% endfor %}
     </div>
