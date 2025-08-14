@@ -1,4 +1,6 @@
-# Stamper
+# Stamper 
+
+The project is deployed on PythonAnywhere: https://jalenseotechdev.pythonanywhere.com/
 
 ### Table of Contents
 - [General Info](#general-info)
@@ -52,8 +54,6 @@ GENAI_KEY=your_genai_key
 TENOR_API_KEY=your_tenor_key
 ```
 
-### Usage
-The project is deployed on PythonAnywhere: https://jalenseotechdev.pythonanywhere.com/
 
 ### Workflows
 [![Check Style](https://github.com/jalenjaloney/stamper/actions/workflows/style_check.yaml/badge.svg)](https://github.com/jalenjaloney/stamper/actions/workflows/style_check.yaml)
